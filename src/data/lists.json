@@ -1,0 +1,228 @@
+{
+  "lists": [
+    {
+      "id": "l14",
+      "number": "十四",
+      "date": "2026-10-13",
+      "words": [
+        {
+          "hanzi": "空气",
+          "pinyin": "kōng qì",
+          "english": "air"
+        },
+        {
+          "hanzi": "岩石",
+          "pinyin": "yán shí",
+          "english": "rock"
+        },
+        {
+          "hanzi": "树林",
+          "pinyin": "shù lín",
+          "english": "woods"
+        },
+        {
+          "hanzi": "草地",
+          "pinyin": "cǎo dì",
+          "english": "grass, lawn"
+        },
+        {
+          "hanzi": "花园",
+          "pinyin": "huā yuán",
+          "english": "garden"
+        }
+      ]
+    },
+    {
+      "id": "l15",
+      "number": "十五",
+      "date": "2026-10-20",
+      "words": [
+        {
+          "hanzi": "星星",
+          "pinyin": "xīng xing",
+          "english": "stars"
+        },
+        {
+          "hanzi": "月亮",
+          "pinyin": "yuè liàng",
+          "english": "moon"
+        },
+        {
+          "hanzi": "彩虹",
+          "pinyin": "cǎi hóng",
+          "english": "rainbow"
+        },
+        {
+          "hanzi": "太阳",
+          "pinyin": "tài yáng",
+          "english": "sun"
+        },
+        {
+          "hanzi": "下雨",
+          "pinyin": "xià yǔ",
+          "english": "raining"
+        }
+      ]
+    },
+    {
+      "id": "l16",
+      "number": "十六",
+      "date": "2026-10-27",
+      "words": [
+        {
+          "hanzi": "郊外",
+          "pinyin": "jiāo wài",
+          "english": "countryside"
+        },
+        {
+          "hanzi": "乌云",
+          "pinyin": "wū yún",
+          "english": "dark clouds"
+        },
+        {
+          "hanzi": "打伞",
+          "pinyin": "dǎ sǎn",
+          "english": "open an umbrella"
+        },
+        {
+          "hanzi": "刮风",
+          "pinyin": "guā fēng",
+          "english": "windy"
+        },
+        {
+          "hanzi": "闪电",
+          "pinyin": "shǎn diàn",
+          "english": "lightning"
+        }
+      ]
+    },
+    {
+      "id": "l17",
+      "number": "十七",
+      "date": "2026-11-03",
+      "words": [
+        {
+          "hanzi": "晴朗",
+          "pinyin": "qíng lǎng",
+          "english": "sunny, clear"
+        },
+        {
+          "hanzi": "寒冷",
+          "pinyin": "hán lěng",
+          "english": "cold"
+        },
+        {
+          "hanzi": "炎热",
+          "pinyin": "yán rè",
+          "english": "very hot"
+        },
+        {
+          "hanzi": "日历",
+          "pinyin": "rì lì",
+          "english": "calendar"
+        },
+        {
+          "hanzi": "时间",
+          "pinyin": "shí jiān",
+          "english": "time"
+        }
+      ]
+    },
+    {
+      "id": "l18",
+      "number": "十八",
+      "date": "2026-11-10",
+      "words": [
+        {
+          "hanzi": "月球",
+          "pinyin": "yuè qiú",
+          "english": "the moon"
+        },
+        {
+          "hanzi": "地球",
+          "pinyin": "dì qiú",
+          "english": "Earth"
+        },
+        {
+          "hanzi": "彗星",
+          "pinyin": "huì xīng",
+          "english": "comet"
+        },
+        {
+          "hanzi": "海王星",
+          "pinyin": "hǎi wáng xīng",
+          "english": "Neptune"
+        },
+        {
+          "hanzi": "天王星",
+          "pinyin": "tiān wáng xīng",
+          "english": "Uranus"
+        }
+      ]
+    },
+    {
+      "id": "l19",
+      "number": "十九",
+      "date": "2026-11-17",
+      "words": [
+        {
+          "hanzi": "环保",
+          "pinyin": "huán bǎo",
+          "english": "protect the environment"
+        },
+        {
+          "hanzi": "宇宙",
+          "pinyin": "yǔ zhòu",
+          "english": "universe"
+        },
+        {
+          "hanzi": "用水",
+          "pinyin": "yòng shuǐ",
+          "english": "use water"
+        },
+        {
+          "hanzi": "环境",
+          "pinyin": "huán jìng",
+          "english": "environment"
+        },
+        {
+          "hanzi": "垃圾",
+          "pinyin": "lā jī",
+          "english": "rubbish"
+        }
+      ]
+    },
+    {
+      "id": "l20",
+      "number": "二十",
+      "date": "2026-11-24",
+      "words": [
+        {
+          "hanzi": "夜空",
+          "pinyin": "yè kōng",
+          "english": "night sky"
+        },
+        {
+          "hanzi": "神话",
+          "pinyin": "shén huà",
+          "english": "myth"
+        },
+        {
+          "hanzi": "航天",
+          "pinyin": "háng tiān",
+          "english": "space travel"
+        },
+        {
+          "hanzi": "外星人",
+          "pinyin": "wài xīng rén",
+          "english": "alien"
+        },
+        {
+          "hanzi": "望远镜",
+          "pinyin": "wàng yuǎn jìng",
+          "english": "telescope"
+        }
+      ]
+    }
+  ]
+}

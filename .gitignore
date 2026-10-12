@@ -1,0 +1,11 @@
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+node_modules/
+# Raw photos of spelling sheets may show a child's name or class; keep them out of the repo.
+photos/
+*.jpg
+*.jpeg
+*.heic
+*.png
