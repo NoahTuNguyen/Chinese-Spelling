@@ -354,7 +354,7 @@
     var missed = D.queue.filter(function (_, i) { return D.marks[i] === "no"; });
     var again = missed.length ? '<button type="button" class="big-btn yellow" data-act="retest"><span class="bb-cn" lang="zh-CN">再练一次</span><span class="bb-en">Practise ' +
       (missed.length <= 2 ? '<span lang="zh-CN">' + esc(missed.map(function (w) { return w.hanzi; }).join("、")) + "</span>" : missed.length + " words") + " again</span></button>" : "";
-    return '<div class="screen done"><div class="confetti" aria-hidden="true"><span class="cf c1"></span><span class="cf c2"></span><span class="cf c3"></span><span class="cf c4"></span><span class="cf c5"></span><span class="cf c6"></span></div>' +
+    return '<div class="screen welldone"><div class="confetti" aria-hidden="true"><span class="cf c1"></span><span class="cf c2"></span><span class="cf c3"></span><span class="cf c4"></span><span class="cf c5"></span><span class="cf c6"></span></div>' +
       '<div class="wstars" role="img" aria-label="' + stars + ' out of 5 stars">' + starRow + "</div>" +
       '<h1 class="wd-cn" lang="zh-CN">' + head[0] + '</h1><p class="wd-en">' + head[1] + "</p>" +
       '<div class="scard">' + sc + '<ul class="sbook" aria-label="Sticker book: ' + got + " of " + S.lists.length + '">' + book + "</ul></div>" +

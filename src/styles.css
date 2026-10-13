@@ -344,7 +344,7 @@ body.full .main{max-width:none;padding:0}
 .c-count{margin:0;font-size:15px;font-weight:600;color:var(--muted)}
 
 /* Well done + sticker book (mockup 4) */
-.done{position:relative;align-items:center;text-align:center;padding-top:30px}
+.welldone{position:relative;align-items:center;text-align:center;padding-top:30px}
 .confetti{position:absolute;inset:0;pointer-events:none}
 .cf{position:absolute;border-radius:4px;animation:cf-in .9s ease-out both}
 .cf.c1{left:34px;top:40px;width:12px;height:22px;background:#F2A64B;rotate:-24deg}
