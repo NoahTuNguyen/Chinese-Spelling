@@ -135,8 +135,10 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
 - Light theme (the mockups) is the default on every device. Dark is opt-in from the Parent
   corner (`data-theme="dark"` on `<html>`), never from the device setting.
 - Each character sits in a green 田字格 box (`.tzg`); boxes size to their card with a container query.
-- Navigation: bottom tab bar under 768px, segmented tabs in a top app bar from 768px.
-  Dictation, Check, Well done and focus mode are full screen (`body.full`: no bars).
+- Navigation: four tabs, always in this order: 学习 Learn, 玩一玩 Play, 听写 Dictation, 难词 Tricky.
+  Bottom tab bar under 768px (fits at 320px), segmented tabs in a top app bar from 768px.
+  Dictation, Check, Well done, focus mode, the picture card and a game round are full screen
+  (`body.full`: no bars).
 - Word cards: a wrapper `.word` with `.word-main` (whole card, plays the word) and, in Learn,
   a small `ⓘ more` button that opens the picture card (a button can't sit inside a button).
   Picture (4:3 `img`, else emoji, else none) above the 田字格 when the Pictures switch is on.
@@ -147,23 +149,32 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   sticker count pill (`.stk-pill`) open the week sheet `<dialog id="weeks">` ("选一周 Choose a
   week": one row per list with date, 听写（N）, Next tag, sticker state; past dimmed). It is the
   only way to choose a list; picking stays on the same tab. Shown on Learn, focus mode, the
-  Dictation start screen and Tricky; hidden while a dictation runs and on the picture card.
+  Dictation start screen, Play's game picker and Tricky; hidden while a dictation or game round
+  runs and on the picture card.
   "回到本周 Back to this week" shows when the chosen list isn't the default.
 - Screens: Learn (title picker, word cards, Play all tile, One by one → focus mode),
   Dictation (Hear again, empty 田字格, Next), Check your paper (two faces per word; Done
   once all are marked), Well done (stars scaled to 5, sticker + sticker book), Tricky.
+- Play: game picker built from the `GAMES` registry in app.js (add a game there). 看图选词
+  Picture quiz (`G` state): every word with an `img` in the selected list, random order, 3
+  choices from the same list, Hint shows pinyin, keys 1/2/3; right = blue + tick + chime +
+  spoken word, wrong = boop + wobble + disabled (never red). Needs ≥ 3 pictures. End screen
+  stars = right first try; words not right first time go to Tricky (`applyTricky`, shared
+  with Dictation). Chime/boop are Web Audio tones (no files), off via the Sounds switch.
 - Parent corner: `<dialog>`; press-and-hold 1.5 s on touch, click/keyboard elsewhere.
-  Holds the Pinyin/Pictures/English/Slow voice + Dark theme switches, how it
+  Holds the Pinyin/Pictures/English/Slow voice + Sounds/Dark theme switches, how it
   works, Add to Home Screen tip (phones/tablets), clear tricky words, reset stickers.
 - Every screen has one short `.howto` line (bilingual on kid screens); keep them accurate
   when changing a flow. Labels are simple Chinese + small English.
 - Keyboard: Space hears, ←/→ move between words, Enter is next in dictation. Visible
   4px `--grid` focus ring. Kid tap targets ≥ 48px. `prefers-reduced-motion` turns off
   bounce, confetti, star pop and pulsing.
-- Calm and positive: no timers, no fail sounds; 0 correct still says "Good try!".
+- Calm and positive: no timers, no harsh fail sounds (the quiz's wrong-answer "boop" is soft);
+  0 correct still says "Good try!".
 
 ## Device storage (localStorage, wrapped in try/catch)
-- `tx-prefs`: `{ slow, py, en, pics, dark }` (English and dark default off).
+- `tx-prefs`: `{ slow, py, en, pics, dark, sound }` (English and dark default off, sound on).
+- `tx-games`: `{ "pictureQuiz": { "<listId>": { best, total } } }`; best first-try score per list.
 - `tx-tricky`: `{ "<hanzi>": { misses, streak, pinyin, english, pic, img } }`; a word leaves
   after it's marked right twice in a row.
 - `tx-stickers`: `{ "<listId>": { best, total, perfect, at } }`; earned the first time a full

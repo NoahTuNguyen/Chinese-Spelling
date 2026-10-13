@@ -68,10 +68,12 @@ yellow buttons have a 4–5 px solid bottom shadow (`--pencil-shadow`) for a tac
   Playing state: `--pencil` 3 px border, scale 1.03, three animated sound bars top-right.
   Respect `prefers-reduced-motion`.
 - **Play all tile**: last cell of the grid, yellow, white circle with play icon, 全部听 / Play all.
-- **Bottom tab bar** (phone, < 768 px wide): 学习 Learn, 听写 Dictation, 难词 Tricky, icon above
-  label, active tab has a mint pill behind the icon. Tricky shows an orange count badge.
-  Fixed to the bottom with safe-area padding.
-- **Header tabs** (≥ 768 px): the same three tabs as a segmented pill in the top bar.
+- **Bottom tab bar** (phone, < 768 px wide): four tabs, in this order everywhere:
+  学习 Learn (book), 玩一玩 Play (puzzle piece), 听写 Dictation (pencil), 难词 Tricky (star).
+  Icon above label, active tab has a mint pill behind the icon. Tricky shows an orange count
+  badge. Fixed to the bottom with safe-area padding. All four fit at 320 px.
+- **Header tabs** (≥ 768 px): the same four tabs, same order, as a segmented pill in the top
+  bar. 768–1023 px: each tab stacks 中文 over English so logo + tabs + Parent corner fit.
 - **Title picker** (replaces the sticker strip and the Parent corner list picker): the list
   title is a button inside the page `<h1>`: 听写（十五） in Kai with a small ▾ in a white
   circle, and the date line under it ("Tue 20 Oct · in 7 days"). `aria-label` like
@@ -123,6 +125,7 @@ Opens by press-and-hold on the gear for ~1.5 s with a filling ring on touch devi
 (`pointer: coarse`); a normal click on desktop. Lists are chosen from the title picker, not here.
 Contents:
 - On the word cards: switches Pinyin (on), Pictures (on), English (off), Slow voice (off).
+- Sound and screen: Sounds (on; game chime/boop only, words are still spoken), Dark theme (off).
 - How it works (short paragraph) + on iPhone/iPad: "Add to Home Screen so stickers
   aren't cleared" with brief steps.
 - Clear tricky words on this device (two-tap confirm). Optionally Reset stickers.
@@ -153,6 +156,33 @@ One function, `pickDefaultList(lists, now)` in `src/lists-logic.js`, with
 button. Centered max-width 1200. Keyboard hints strip: Space = hear, ←/→ = move,
 Enter = next in dictation. Visible focus ring (`--grid`, 4 px) on the focused card.
 
+**8 Play: game picker.** Tab 玩一玩 Play. Title picker (as on other tabs), how-to
+选一个游戏 · Pick a game, then one card per game from a registry (`GAMES` in app.js) so more
+games can be added. Each card: picture, Chinese + English name, one-line description, and a
+note pill ("Best this week: 4 / 5", "5 pictures to play", or why it can't be played).
+
+**9 看图选词 Picture quiz.** Uses the selected list. Questions = every word with an `img`, once
+each, random order; words without `img` are skipped. Fewer than 3 pictures → the card says
+"This week needs more pictures to play" and doesn't start. Full screen (no tab bar):
+- Top: ✕ (back to the picker), progress dots (done green, current wide yellow), "2 / 5".
+- Big 4:3 rounded picture with `alt=""`; the question region (`<section>`) has
+  `aria-label="Which word matches this picture?"` so the alt never gives the answer away.
+- Prompt 这是什么？ Which word is this? Three choice buttons (≥ 72 px tall, characters only in
+  Kai, large): the right word + 2 other words from the same list, shuffled. Stacked full width
+  on phones/iPad portrait; to the right of the picture from 1000 px (iPad landscape, desktop).
+  Keys 1/2/3 answer (number badges show on devices with a mouse).
+- 💡 提示 Hint: shows pinyin under all three choices for this question.
+- Right: button turns `--good` with a white tick, small bounce, chime, the word is spoken,
+  pinyin + English appear under the picture, next question after ~1.5 s (plus a Next button).
+- Wrong: soft boop, short wobble, that choice fades and is disabled; keep trying. No red,
+  no "wrong" text.
+- Chime and boop are made with the Web Audio API (no files); Parent corner → Sounds turns
+  them off. `prefers-reduced-motion` turns off bounce and wobble.
+- End: stars = right on the first try, scaled to 5; 做得好！ "4 / 5 first try!" (加油！ Good try!
+  at 0, 太棒了！ when all first try). Best for this list, how many words went to Tricky.
+  Buttons 再玩一次 Play again (new order and choices), 回到游戏 Back to games. Words not right
+  first time go to Tricky (same rules as dictation).
+
 ## Data changes (`src/data/lists.json`)
 Add an optional `pic` per word: a single emoji used as the picture, e.g.
 `{"hanzi":"彩虹","pinyin":"cǎi hóng","english":"rainbow","pic":"🌈"}`.
@@ -161,8 +191,10 @@ omit it and the card simply shows no picture). Update `scripts/validate_lists.py
 it (optional string). Mockups show hand-drawn SVG pictures; the app uses the emoji.
 
 ## Device storage (localStorage, no server)
-- `tx-prefs`: `{ slow, py, en, pics }`
-- `tx-tricky`: unchanged
+- `tx-prefs`: `{ slow, py, en, pics, dark, sound }`
+- `tx-tricky`: unchanged (Dictation and the picture quiz both add to it)
+- `tx-games`: `{ "pictureQuiz": { "<listId>": { "best": 4, "total": 5 } } }`: best first-try
+  score per game and list
 - `tx-stickers`: `{ "<listId>": { "best": 4, "total": 5, "perfect": false, "at": "<ISO date>" } }`
   A sticker is earned the first time a dictation of that list is finished (Done pressed);
   keep the best score; `perfect` = all correct (gold star with a ring).
