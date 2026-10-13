@@ -24,6 +24,7 @@ open a shared link, tap a word to hear it in Mandarin, and run a mock dictation.
 - `src/app.js` — the whole app (render functions + delegated `data-act` click handlers)
 - `src/styles.css` — design tokens on `:root` (light; dark under `[data-theme="dark"]`), 田字格 boxes, components
 - `src/data/lists.json` — ALL spelling-list data
+- `src/img/` — one 640×480 WebP illustration per word, named by toneless pinyin (`caihong.webp`)
 - `src/manifest.webmanifest`, `src/icons/` — Add to Home Screen (icons 192, 512 incl. maskable,
   180 apple-touch-icon). `*.png` is gitignored except `src/icons/*.png`.
 - `scripts/validate_lists.py` — checks lists.json; CI runs it before deploying
@@ -60,7 +61,11 @@ On this Windows machine `python3` is only the Store stub; use `py -3` instead.
 ```json
 { "lists": [
   { "id": "l14", "number": "十四", "date": "2026-10-13",
-    "words": [ { "hanzi": "空气", "pinyin": "kōng qì", "english": "air", "pic": "🎈" } ] }
+    "words": [ { "hanzi": "彩虹", "pinyin": "cǎi hóng", "english": "rainbow", "pic": "🌈",
+                 "img": "img/caihong.webp",
+                 "explain": "A rainbow is the colourful arch you see in the sky after rain.",
+                 "sentence": "雨后，天上有一道彩虹。",
+                 "sentencePinyin": "yǔ hòu, tiān shàng yǒu yí dào cǎi hóng." } ] }
 ] }
 ```
 - `id`: "l" + the list number in Arabic numerals (十四 → l14, 二十一 → l21). Must be unique.
@@ -68,8 +73,30 @@ On this Windows machine `python3` is only the Store stub; use `py -3` instead.
 - `date`: test date as YYYY-MM-DD (the year is printed on the sheet).
 - `pic` (optional): ONE emoji shown as the word's picture. Child-safe, clear meaning, and
   widely supported (Unicode 13 or older so older iPads show it). Leave it out if nothing fits
-  well; the card then simply has no picture.
+  well. It's the fallback picture when there's no `img`.
+- `img` (optional): `img/<toneless-pinyin>.webp`, relative to `src/`. The validator fails if the
+  file is missing and only warns for words without `img`.
+- `explain` (optional): one short, simple English sentence a 6–8 year old understands.
+- `sentence` + `sentencePinyin` (optional): one short Primary 1–2 level example sentence using
+  the word, and its pinyin (syllables separated by spaces, tone changes of 一/不 marked as in
+  school books, e.g. "yí dào", "bú luàn"; Western punctuation).
 - Keep `lists` sorted by date. The app opens on the next upcoming list automatically.
+
+## Pictures (`src/img/`)
+- AI illustrations (Gemini), one per word, 640×480 WebP (~quality 82, centre-crop to 4:3),
+  named by toneless pinyin, no spaces (望远镜 → `wangyuanjing.webp`). If two words share the
+  same toneless pinyin, prefix the list id: `l21-shixian.webp`.
+- Never any text, letters, numbers or characters in a picture; child-safe; meaning only.
+- Within one list pictures must look clearly different (a picture → word game will use
+  wrong answers from the same list). Known look-alikes: 环境/郊外/树林, 宇宙/夜空,
+  月亮/月球/神话, 晴朗/刮风.
+- Style: flat children's picture-book illustration, soft rounded shapes, thick soft outlines,
+  pastel mint/yellow/sky blue/peach/lilac, one clear subject on a plain light background
+  (dark blue only for night or space). The full Gemini style prompt (sent once at the start of
+  a chat) is in `docs/design/picture-pack.md`.
+- One Gemini message per word: `Image: <scene description>. One picture only, no text.`
+- Only the current list's pictures are preloaded; all other `<img>` use `loading="lazy"`.
+  There is no service worker (if one is added, cache `src/img/` too).
 
 ## Adding lists from a photo of the spelling sheet
 When the user gives photos of a 听写 sheet:
@@ -79,11 +106,18 @@ When the user gives photos of a 听写 sheet:
    (e.g. keep neutral tones like "xīng xing" as printed). Separate syllables with spaces.
 3. Write a short, simple English meaning a 7-year-old understands (1–4 words).
 4. Pick a `pic` emoji for each word (see Data format); leave it out if nothing fits.
-5. Ignore student names, class, school and handwriting. Never commit the photos
+5. Draft `explain`, `sentence` and `sentencePinyin` for each word (see Data format).
+6. Write one Gemini image line per word for the user to generate
+   (`Image: <scene description>. One picture only, no text.`), naming the file each one
+   becomes (`src/img/<toneless-pinyin>.webp`) and avoiding look-alikes within the list.
+   Leave `img` out until the user has added the file; the emoji shows meanwhile.
+7. Ignore student names, class, school and handwriting. Never commit the photos
    themselves (they're gitignored) and never store a child's name anywhere.
-6. If a list with the same number + date exists, replace it; otherwise add it.
-7. Run `python3 scripts/validate_lists.py`, show the user the new words and pictures
-   for a quick check, then commit (`Add 听写（N）`) and push when they confirm.
+8. If a list with the same number + date exists, replace it; otherwise add it.
+9. Run `python3 scripts/validate_lists.py`, show the user the new words, emoji,
+   explanations and sentences in a table for a check, then commit (`Add 听写（N）`)
+   and push when they confirm. When the pictures arrive, check each one has no text,
+   add `img`, validate, commit and push.
 
 ## Design
 Kid-first screens for a 6–8 year old, with parent controls tucked into the Parent corner.
@@ -96,6 +130,12 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
 - Each character sits in a green 田字格 box (`.tzg`); boxes size to their card with a container query.
 - Navigation: bottom tab bar under 768px, segmented tabs in a top app bar from 768px.
   Dictation, Check, Well done and focus mode are full screen (`body.full`: no bars).
+- Word cards: a wrapper `.word` with `.word-main` (whole card, plays the word) and, in Learn,
+  a small `ⓘ more` button that opens the picture card (a button can't sit inside a button).
+  Picture (4:3 `img`, else emoji, else none) above the 田字格 when the Pictures switch is on.
+- Picture card (`S.pic`, from `ⓘ more` or focus mode's 看图 More): big picture, word, pinyin,
+  Listen, English explanation, example sentence + pinyin with its own play button;
+  prev/next, swipe, ←/→, Esc or ✕ closes back to where it was opened.
 - Screens: Learn (sticker strip, word cards, Play all tile, One by one → focus mode),
   Dictation (Hear again, empty 田字格, Next), Check your paper (two faces per word; Done
   once all are marked), Well done (stars scaled to 5, sticker + sticker book), Tricky.
@@ -111,7 +151,7 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
 
 ## Device storage (localStorage, wrapped in try/catch)
 - `tx-prefs`: `{ slow, py, en, pics, dark }` (English and dark default off).
-- `tx-tricky`: `{ "<hanzi>": { misses, streak, pinyin, english, pic } }`; a word leaves
+- `tx-tricky`: `{ "<hanzi>": { misses, streak, pinyin, english, pic, img } }`; a word leaves
   after it's marked right twice in a row.
 - `tx-stickers`: `{ "<listId>": { best, total, perfect, at } }`; earned the first time a full
   dictation of that list is finished; keeps the best score; practising missed words again
