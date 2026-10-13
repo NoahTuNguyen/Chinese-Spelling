@@ -196,6 +196,12 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
     words with an `img` or emoji; flips update the cards in place (no re-render) so the flip
     animates and focus stays. Score = moves (best = fewest, `saveBest(..., lower)`); stars
     ≤ pairs+1 → 5, +3 → 4, +5 → 3, else 2. No Tricky entries.
+  - 泡泡 Bubble pop (`kind: "bubbles"`): start screen with 慢 Slow / 中 Normal (`bubbleSpeed`,
+    not the Slow voice switch); 8 rounds, 4 bubbles (right + 3 from the list). `render()` starts
+    the `requestAnimationFrame` float (`bubbleStart`) and stops it on every other screen; it
+    pauses while the tab is hidden. Bubbles are moved with `element.style.transform` (CSSOM,
+    allowed by the CSP; no `style=""` in markup). Taps update the bubbles in place. Reduced
+    motion: a still row that fades in. Score = rounds right on the first tap.
 - Parent corner: `<dialog>`; press-and-hold 1.5 s on touch, click/keyboard elsewhere.
   Holds the Pinyin/Pictures/English/Slow voice + Sounds/Dark theme switches, how it
   works, Add to Home Screen tip (phones/tablets), clear tricky words, reset stickers.

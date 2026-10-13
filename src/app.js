@@ -486,7 +486,25 @@
         var words = shuffle(this.items(L)).slice(0, 6), cards = [];
         words.forEach(function (w, i) { cards.push({ w: w, i: i, face: "pic" }, { w: w, i: i, face: "word" }); });
         return { cards: shuffle(cards), up: [], matched: {}, found: 0, moves: 0, pairs: words.length, lock: false };
-      } }
+      } },
+    { id: "bubbles", cn: "泡泡", en: "Bubble pop", sub: "Hear a word, pop the right bubble", kind: "bubbles",
+      how: ["听一听，戳泡泡", "Listen, then pop the right bubble"], region: "Which bubble is the word you heard?",
+      items: function (L) { return L ? L.words : []; }, min: 1,
+      notEnough: "This week has no words yet", ready: function () { return "8 rounds to play"; },
+      art: function () { return '<span class="gc-bubbles"><span class="bub-mini b1"></span><span class="bub-mini b2"></span><span class="bub-mini b3"></span></span>'; },
+      /* 8 rounds; words repeat if the list is short (never the same word twice in a row); 4 bubbles each. */
+      build: function (L) {
+        var rounds = [], pool = [];
+        while (rounds.length < 8) {
+          if (!pool.length) pool = shuffle(L.words);
+          var w = pool.shift();
+          if (rounds.length && rounds[rounds.length - 1].w.hanzi === w.hanzi && L.words.length > 1) { pool.push(w); continue; }
+          var choices = shuffle([w].concat(otherWords(L, [w.hanzi], 3))).map(function (c) { return { text: c.hanzi, py: c.pinyin }; });
+          rounds.push({ w: w, answer: w.hanzi, choices: choices, firstTry: true });
+        }
+        return rounds;
+      },
+      onShow: function (q) { sayWordSoon(q.w, 300); } }
   ];
   /* 缺字 look-alikes (data/lookalikes.json): character → [most common mix-up, others…]. */
   var LOOK = {};
@@ -517,6 +535,8 @@
   function playView(L) {
     var g = curGame();
     if (G.phase === "run" && g && g.kind === "memory") return memoryView(g);
+    if (G.phase === "setup" && g && g.kind === "bubbles") return bubbleSetupView(g);
+    if (G.phase === "run" && g && g.kind === "bubbles") return bubbleView(g);
     if (G.phase === "run" && g) return choiceView(g);
     if (G.phase === "end" && g) return gameEndView(g);
     var head = L ? top(listHead(L)) : top('<h1 class="title" lang="zh-CN">玩一玩</h1>');
@@ -533,16 +553,118 @@
     return head + howto("选一个游戏", "Pick a game") + '<div class="games">' + cards + "</div>";
   }
   /* Start (or restart) a round of game id on the selected list. */
-  function startGame(id) {
+  /* setup = true: games with a start screen (Bubble pop's speed choice) show it first. */
+  function startGame(id, setup) {
     var L = curList(), g = gameById(id); if (!L || !g) return;
     if (g.items(L).length < g.min) return;
-    clearTimeout(gTimer); stopSpeech();
-    G = newGame(); G.phase = "run"; G.game = g.id; G.listId = L.id;
+    clearTimeout(gTimer); stopSpeech(); bubbleStop();
+    G = newGame(); G.game = g.id; G.listId = L.id;
+    if (setup && g.kind === "bubbles") {
+      G.phase = "setup"; render(); toTop();
+      var sp = root.querySelector('.bub-speed[aria-pressed="true"]'); if (sp) sp.focus({ preventScroll: true });
+      return;
+    }
+    G.phase = "run";
     if (g.kind === "memory") { G.mm = g.build(L); G.q = []; }
     else G.q = g.build(L);
-    render(); toTop();
-    var p = root.querySelector(".g-choice, .mm-card"); if (p) p.focus({ preventScroll: true });
+    render(); toTop(); /* render() also starts the bubbles */
+    var p = root.querySelector(".g-choice, .mm-card, .bub"); if (p) p.focus({ preventScroll: true });
     if (g.onShow) g.onShow(G.q[0]);
+  }
+
+  /* ---------- 泡泡 Bubble pop: bubbles float up (requestAnimationFrame + transforms) ---------- */
+  var bubbleSpeed = "slow"; /* start-screen choice, kept for this visit; Slow voice doesn't affect it */
+  var BUB = null; /* animation state: { raf, last, items: [{ x, y, lane, phase }], h } */
+  function reducedMotion() { return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }
+  function bubbleSetupView(g) {
+    function sp(id, cn, en) { return '<button type="button" class="bub-speed" data-act="bspeed" data-v="' + id + '" aria-pressed="' + (bubbleSpeed === id) + '"><span class="bb-cn" lang="zh-CN">' + cn + '</span><span class="bb-en">' + en + "</span></button>"; }
+    return '<div class="screen game g-bubbles bub-setup">' +
+      '<div class="d-top"><button type="button" class="round-btn" data-act="gquit" aria-label="Back to games">' + IC.close + "</button></div>" +
+      '<div class="bub-hero" aria-hidden="true"><span class="bub-mini b1"></span><span class="bub-mini b2"></span><span class="bub-mini b3"></span></div>' +
+      '<h1 class="wd-cn" lang="zh-CN">泡泡</h1><p class="wd-en">Bubble pop</p>' + howto(g.how[0], g.how[1], "bub-how") +
+      '<div class="bub-speeds" role="group" aria-label="Speed">' + sp("slow", "慢", "Slow") + sp("normal", "中", "Normal") + "</div>" +
+      '<div class="screen-foot"><button type="button" class="big-btn yellow" data-act="bgo"><span class="bb-cn" lang="zh-CN">开始</span><span class="bb-en">Start</span></button></div></div>';
+  }
+  function bubbleView(g) {
+    var n = G.q.length, q = G.q[G.i], still = reducedMotion();
+    var bubbles = q.choices.map(function (c, ci) {
+      var wrong = G.wrong.indexOf(ci) >= 0, right = G.solved && c.text === q.answer;
+      return '<button type="button" class="bub' + (still ? " still" : "") + (wrong ? " grey" : "") + (right ? " popped" : "") + " n" + Math.min(Array.from(c.text).length, 5) + '" data-act="bpick" data-i="' + ci + '"' +
+        (wrong || G.solved ? " disabled" : "") + ' aria-label="' + (ci + 1) + ". " + esc(c.text) + (right ? ", right" : wrong ? ", not this one" : "") + '">' +
+        '<span class="g-num" aria-hidden="true">' + (ci + 1) + '</span><span class="bub-hz" lang="zh-CN">' + esc(c.text) + "</span></button>";
+    }).join("");
+    return '<div class="screen game g-bubbles">' + gameTop(n, G.i) + howto(g.how[0], g.how[1], "bub-how") +
+      '<div class="bub-bar"><button type="button" class="g-say" data-act="gsay" data-hl="gsay"><span class="listen-ic">' + IC.spkMid + '</span><span lang="zh-CN">再听一次</span> Hear again</button></div>' +
+      '<section class="bub-field' + (still ? " still" : "") + '" aria-label="' + esc(g.region) + '">' + bubbles + "</section>" +
+      '<p class="g-reveal bub-reveal" role="status"></p></div>';
+  }
+  /* Start the float for the current round: 4 lanes, staggered starts below the field, gentle side drift. */
+  function bubbleStart() {
+    bubbleStop();
+    if (reducedMotion()) return; /* bubbles sit still in a row and fade in (CSS) */
+    var els = root.querySelectorAll(".bub"); if (!els.length) return;
+    BUB = { raf: 0, last: 0, items: [] };
+    var order = shuffle([0, 1, 2, 3].slice(0, els.length));
+    for (var i = 0; i < els.length; i++) BUB.items.push({ el: els[i], lane: i, y: 0, start: order[i], phase: Math.random() * 6.28, popped: els[i].classList.contains("popped") });
+    /* All four start inside the lower half of the field at staggered heights, so they're visible at once. */
+    var field = root.querySelector(".bub-field"), h = field ? field.clientHeight : 400;
+    BUB.items.forEach(function (b) { b.y = h - b.el.offsetWidth - 8 - b.start * h * 0.13; });
+    BUB.raf = requestAnimationFrame(bubbleFrame);
+  }
+  function bubbleStop() { if (BUB && BUB.raf) cancelAnimationFrame(BUB.raf); BUB = null; }
+  function bubbleFrame(t) {
+    var B = BUB; if (!B) return;
+    var field = root.querySelector(".bub-field"); if (!field) { bubbleStop(); return; }
+    var dt = B.last ? Math.min(0.05, (t - B.last) / 1000) : 0; B.last = t;
+    var W = field.clientWidth, H = field.clientHeight, lanes = B.items.length;
+    var speed = H * (bubbleSpeed === "normal" ? 0.14 : 0.075); /* fraction of the field height per second */
+    B.items.forEach(function (b) {
+      if (b.popped) return;
+      var size = b.el.offsetWidth;
+      b.y -= speed * dt;
+      if (b.y < -size) b.y = H + 10 + Math.random() * 40; /* left the top: back in from the bottom */
+      var laneW = W / lanes, x = laneW * (b.lane + 0.5) - size / 2 + Math.sin(t / 1100 + b.phase) * Math.min(14, laneW * 0.12);
+      b.x = Math.max(0, Math.min(W - size, x));
+      b.el.style.transform = "translate3d(" + b.x.toFixed(1) + "px," + b.y.toFixed(1) + "px,0)";
+    });
+    B.raf = requestAnimationFrame(bubbleFrame);
+  }
+  /* Pause while the tab is hidden; carry on where it was when it's back. */
+  document.addEventListener("visibilitychange", function () {
+    if (!BUB) return;
+    if (document.hidden) { cancelAnimationFrame(BUB.raf); BUB.raf = 0; }
+    else if (!BUB.raf) { BUB.last = 0; BUB.raf = requestAnimationFrame(bubbleFrame); }
+  });
+  /* Tap a bubble: right → pop (burst + pop sound) + chime + the word, next round; wrong → wobble + boop, grey, keeps floating. */
+  function bubblePick(ci) {
+    if (G.phase !== "run" || G.solved) return;
+    var q = G.q[G.i], c = q.choices[ci], el = root.querySelector('.bub[data-i="' + ci + '"]');
+    if (!c || !el || G.wrong.indexOf(ci) >= 0) return;
+    if (c.text === q.answer) {
+      G.solved = true; stopSpeech();
+      if (BUB) BUB.items.forEach(function (b) { if (b.el === el) b.popped = true; });
+      el.classList.add("popped"); el.disabled = true; el.setAttribute("aria-label", (ci + 1) + ". " + c.text + ", right");
+      root.querySelectorAll(".bub").forEach(function (b) { if (b !== el) b.disabled = true; });
+      var rv = root.querySelector(".bub-reveal"); if (rv) rv.innerHTML = '<span class="g-r-py">' + esc(q.w.pinyin || "") + '</span><span class="g-r-en">' + esc(q.w.english || "") + "</span>";
+      popSound(); setTimeout(chime, 120); sayWordSoon(q.w, 350);
+      var say = root.querySelector(".g-say"); if (say) say.focus({ preventScroll: true });
+      clearTimeout(gTimer); gTimer = setTimeout(bubbleNext, 1800);
+    } else {
+      q.firstTry = false; G.wrong.push(ci);
+      el.classList.add("grey", "wobble"); el.disabled = true; el.setAttribute("aria-label", (ci + 1) + ". " + c.text + ", not this one");
+      setTimeout(function () { el.classList.remove("wobble"); }, 450);
+      boop();
+      var left = root.querySelector(".bub:not([disabled])"); if (left) left.focus({ preventScroll: true });
+    }
+  }
+  function bubbleNext() {
+    clearTimeout(gTimer); if (G.phase !== "run" || !G.solved) return;
+    stopSpeech();
+    if (G.i < G.q.length - 1) {
+      G.i++; G.wrong = []; G.solved = false; render();
+      var p = root.querySelector(".bub"); if (p) p.focus({ preventScroll: true });
+      curGame().onShow(G.q[G.i]);
+    } else { bubbleStop(); gameFinish(); }
   }
 
   /* ---------- 翻翻乐 Memory match: picture card ↔ characters card ---------- */
@@ -710,6 +832,7 @@
   }
   function chime() { if (prefs.sound) { tone(784, 0, 0.18, "sine", 0.18); tone(1175, 0.11, 0.34, "sine", 0.16); } } /* G5 → D6, bright and short */
   function boop() { if (prefs.sound) tone(260, 0, 0.22, "triangle", 0.14, 170); } /* soft low slide, not a buzzer */
+  function popSound() { if (prefs.sound) { tone(520, 0, 0.07, "sine", 0.2, 1400); tone(1600, 0.03, 0.05, "triangle", 0.08, 900); } } /* quick bright "pop" */
 
   /* ---------- Parent corner ---------- */
   /* Add to Home Screen tip: phones and tablets only, and not once it's already running from the Home Screen. */
@@ -833,6 +956,8 @@
     refocus(root, k);
     if (pc.open) renderParent();
     preloadPictures(L);
+    /* Bubble pop: (re)start the float for the bubbles just drawn; stop it everywhere else. */
+    if (S.mode === "play" && G.phase === "run" && G.game === "bubbles") bubbleStart(); else bubbleStop();
   }
 
   /* ---------- dictation flow ---------- */
@@ -916,7 +1041,10 @@
       var c = Array.prototype.filter.call(root.querySelectorAll(".title-btn"), function (x) { return x.offsetParent !== null; })[0]; if (c) c.focus({ preventScroll: true }); /* the pill itself is gone now */
     },
     mode: function (b) { stopSpeech(); clearTimeout(gTimer); S.mode = b.dataset.m; S.focus = false; S.pic = false; S.clearArm = false; if (S.mode === "dict") D = newDict(); if (S.mode === "play") G = newGame(); render(); },
-    gstart: function (b) { if (b.getAttribute("aria-disabled") === "true") return; audioCtx(); startGame(b.dataset.g); }, /* first tap unlocks Web Audio on iOS */
+    gstart: function (b) { if (b.getAttribute("aria-disabled") === "true") return; audioCtx(); startGame(b.dataset.g, true); }, /* first tap unlocks Web Audio on iOS */
+    bspeed: function (b) { bubbleSpeed = b.dataset.v === "normal" ? "normal" : "slow"; render(); },
+    bgo: function () { audioCtx(); startGame(G.game); },
+    bpick: function (b) { bubblePick(+b.dataset.i); },
     gpick: function (b) { gamePick(+b.dataset.i); },
     mflip: function (b) { memoryFlip(+b.dataset.i); },
     ghint: function () { if (G.phase !== "run") return; G.hint = true; render(); var c = root.querySelector(".g-choice:not([disabled])"); if (c) c.focus({ preventScroll: true }); },
@@ -1019,7 +1147,7 @@
     /* Picture quiz: keys 1/2/3 pick a choice. */
     if (S.mode === "play" && G.phase === "run" && /^[1-9]$/.test(k)) {
       var q = G.q[G.i];
-      if (q && q.choices && +k <= q.choices.length) { e.preventDefault(); if (!e.repeat) gamePick(+k - 1); }
+      if (q && q.choices && +k <= q.choices.length) { e.preventDefault(); if (!e.repeat) (G.game === "bubbles" ? bubblePick : gamePick)(+k - 1); }
       return;
     }
     if (S.mode === "dict" && D.phase === "run" && act !== "dstop") {
