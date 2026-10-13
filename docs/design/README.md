@@ -183,6 +183,49 @@ each, random order; words without `img` are skipped. Fewer than 3 pictures → t
   Buttons 再玩一次 Play again (new order and choices), 回到游戏 Back to games. Words not right
   first time go to Tricky (same rules as dictation).
 
+**Shared game engine (all Play games).** Game picker order: 看图选词, 听音选字, 缺字, 翻翻乐, 泡泡.
+Every game uses the selected list; wrong-answer choices come from the same list and are topped up
+from the nearest other lists (by date) only when the list is too short. Same feedback as the
+Picture quiz (right: `--good` blue, tick, bounce, chime, word spoken; wrong: soft boop, wobble,
+fade + disable, try again; never red, never "wrong"), Web Audio sounds behind the Sounds switch,
+`prefers-reduced-motion` respected. Same top bar (✕, progress dots, "2 / 5") and end screen
+(stars, positive headline, 再玩一次 Play again, 回到游戏 Back to games). First-try misses go to
+Tricky (except Memory match). Best score per game per list in `tx-games`, shown on the game card.
+One bilingual how-to line on every game screen. Choice buttons ≥ 72 px; keys 1/2/3(/4) answer;
+everything works by keyboard.
+
+**10 听音选字 Listen & pick.** Every word in the list once, random order. The word is spoken when
+the question appears; a big 🔊 再听一次 Hear again button replays it. 3 choices, characters only.
+💡 提示 Hint shows the word's picture (emoji if it has no `img`; no hint if it has neither), never
+the pinyin. How-to: 听一听，选一选 · Listen, then pick the word.
+
+**11 缺字 Missing character.** Data: `src/data/lookalikes.json` maps every character used in the
+lists to 2–4 visually similar characters a child might confuse (validated by
+`scripts/validate_lists.py`). Each question shows the word in 田字格 boxes with one character
+(random position) replaced by an empty dashed box; the whole word is spoken at the start and 🔊
+replays it. 3 choices: the missing character + 2 look-alikes (fallback: characters from other
+words in the list); a distractor that would spell another word from any list is never offered.
+Hint shows the pinyin of the missing character only. On a right answer the character drops into
+the box, then the whole word is spoken. How-to: 找一找，缺了哪个字？ · Which character is missing?
+
+**12 翻翻乐 Memory match.** Pairs of picture card ↔ characters card (emoji if no `img`), up to 6
+pairs, shuffled face down. Grid: 3 columns on phones, 4–6 on iPad/desktop, cards ≥ 88 px, last
+row centred. Tap to flip (flip animation; a plain swap with reduced motion); flipping a characters
+card speaks the word. Two cards up: a match stays face up with a blue ring and a chime; otherwise
+both flip back after ~1 s. No timer. Score = moves; stars: moves ≤ pairs + 1 → 5, ≤ pairs + 3 → 4,
+≤ pairs + 5 → 3, otherwise 2. Best = fewest moves. No Tricky entries. Cards are buttons with
+`aria-label`s ("Card 4, face down"). How-to: 翻一翻，配一配 · Flip two cards to find a pair.
+
+**13 泡泡 Bubble pop.** Start screen with a speed choice 慢 Slow (default) / 中 Normal (the Slow
+voice switch doesn't affect this). 8 rounds (words repeat if the list is short). Each round the
+word is spoken, then 4 bubbles (right word + 3 from the list), characters large inside, float
+slowly up from the bottom with a gentle side-to-side drift; a bubble leaving the top re-enters at
+the bottom, so there is no failing. Right bubble: burst animation + pop sound + chime, next round.
+Wrong bubble: wobble + boop, turns grey and keeps floating. 🔊 replays the word. Bubbles are real
+buttons (Tab/Enter, keys 1–4). `requestAnimationFrame` + transforms; paused while the tab is
+hidden. Reduced motion: bubbles sit still in a row and fade in. Score = rounds right on the first
+tap. How-to: 听一听，戳泡泡 · Listen, then pop the right bubble.
+
 ## Data changes (`src/data/lists.json`)
 Add an optional `pic` per word: a single emoji used as the picture, e.g.
 `{"hanzi":"彩虹","pinyin":"cǎi hóng","english":"rainbow","pic":"🌈"}`.

@@ -170,12 +170,16 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
 - Screens: Learn (title picker, word cards, Play all tile, One by one → focus mode),
   Dictation (Hear again, empty 田字格, Next), Check your paper (two faces per word; Done
   once all are marked), Well done (stars scaled to 5, sticker + sticker book), Tricky.
-- Play: game picker built from the `GAMES` registry in app.js (add a game there). 看图选词
-  Picture quiz (`G` state): every word with an `img` in the selected list, random order, 3
-  choices from the same list, Hint shows pinyin, keys 1/2/3; right = blue + tick + chime +
-  spoken word, wrong = boop + wobble + disabled (never red). Needs ≥ 3 pictures. End screen
-  stars = right first try; words not right first time go to Tricky (`applyTricky`, shared
-  with Dictation). Chime/boop are Web Audio tones (no files), off via the Sounds switch.
+- Play: game picker built from the `GAMES` registry in app.js; picker order 看图选词, 听音选字,
+  缺字, 翻翻乐, 泡泡 (see docs/design/README.md). Shared engine (`G` state): `startGame`,
+  `gameTop` (✕, dots, "2 / 5"), `choiceView`/`gamePick`/`gameNext` for choice games (a game
+  supplies `build`, `media`, `onShow`, `how`, `hint`), `gameFinish`/`gameEndView`, `saveBest`,
+  distractors via `otherWords` (same list first, then nearest lists). Right = blue + tick +
+  bounce + chime + spoken word; wrong = boop + wobble + disabled (never red); keys 1/2/3.
+  First-try misses go to Tricky (`applyTricky`, shared with Dictation). Chime/boop are Web
+  Audio tones (no files), off via the Sounds switch.
+  - 看图选词 Picture quiz: words with an `img`; Hint = pinyin under the choices; needs ≥ 3 pictures.
+  - 听音选字 Listen & pick: every word; spoken on show, 🔊 Hear again; Hint = the picture/emoji.
 - Parent corner: `<dialog>`; press-and-hold 1.5 s on touch, click/keyboard elsewhere.
   Holds the Pinyin/Pictures/English/Slow voice + Sounds/Dark theme switches, how it
   works, Add to Home Screen tip (phones/tablets), clear tricky words, reset stickers.
