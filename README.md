@@ -3,8 +3,8 @@
 Tap-to-hear practice for weekly Chinese 听写 spelling lists. Pick a list by test
 date, tap words to hear them in Mandarin, run a mock dictation, and revisit tricky words.
 
-- Live site: https://noahtunguyen.github.io/Chinese-Spelling/
-- Link to a specific list: `https://noahtunguyen.github.io/Chinese-Spelling/?list=l15`
+- Live site: https://chinese-spelling.manhtu.dev/
+- Link to a specific list: `https://chinese-spelling.manhtu.dev/?list=l15`
 
 ## Updating lists
 Edit `src/data/lists.json` (or ask Claude Code to add a list from a photo of the

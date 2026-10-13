@@ -8,8 +8,8 @@ open a shared link, tap a word to hear it in Mandarin, and run a mock dictation.
 - Plain HTML, CSS and vanilla JS in `src/`. No framework, no build step, no npm.
 - Hosted on GitHub Pages from a public repo. `src/` is the deployed folder.
 - Deploys automatically on push to `main` via `.github/workflows/deploy.yml`.
-- The site lives under a subpath (`/Chinese-Spelling/`), so every URL in `src/`
-  must stay relative (`data/lists.json`, not `/data/lists.json`).
+- Every URL in `src/` must stay relative (`data/lists.json`, not `/data/lists.json`)
+  so the site works both on the custom domain and under the github.io subpath.
 - Speech uses the browser's built-in `speechSynthesis` (mainland zh-CN voice preferred).
 - Strict CSP in a `<meta http-equiv="Content-Security-Policy">` tag in `src/index.html`
   (Pages can't send custom headers): scripts and styles from the site only (plus
@@ -36,7 +36,12 @@ On this Windows machine `python3` is only the Store stub; use `py -3` instead.
 
 ## Deployment
 - Host: GitHub Pages, source "GitHub Actions" (no Azure, no secrets needed).
-- Repo: `NoahTuNguyen/Chinese-Spelling` (public). Live: https://noahtunguyen.github.io/Chinese-Spelling/
+- Repo: `NoahTuNguyen/Chinese-Spelling` (public). Live: https://chinese-spelling.manhtu.dev/
+  (the old https://noahtunguyen.github.io/Chinese-Spelling/ redirects there).
+- Custom domain: set in the repo's Pages settings (no CNAME file; Actions deploys
+  ignore it). DNS is on Cloudflare: CNAME `chinese-spelling` → `noahtunguyen.github.io`,
+  must stay **DNS only** (grey cloud) or GitHub can't renew the HTTPS certificate.
+  `manhtu.dev` is verified on the NoahTuNguyen account (TXT `_github-pages-challenge-NoahTuNguyen`).
 - Workflow `.github/workflows/deploy.yml`: on push to `main` (or manual run) it
   validates `lists.json`, uploads `src/` and deploys. A failed validation blocks the deploy.
 - Pages caches files for ~10 min, so app.js/styles.css changes can take a few
