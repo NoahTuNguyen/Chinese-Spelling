@@ -6,12 +6,16 @@ open a shared link, tap a word to hear it in Mandarin, and run a mock dictation.
 
 ## Stack and constraints
 - Plain HTML, CSS and vanilla JS in `src/`. No framework, no build step, no npm.
-- Hosted on Azure Static Web Apps (Free plan). `src/` is the deployed folder.
+- Hosted on GitHub Pages from a public repo. `src/` is the deployed folder.
 - Deploys automatically on push to `main` via `.github/workflows/deploy.yml`.
+- The site lives under a subpath (`/Chinese-Spelling/`), so every URL in `src/`
+  must stay relative (`data/lists.json`, not `/data/lists.json`).
 - Speech uses the browser's built-in `speechSynthesis` (mainland zh-CN voice preferred).
-- Strict CSP in `src/staticwebapp.config.json`: scripts and styles from the site
-  only (plus Google Fonts CSS/fonts). No inline `<script>`, no inline `style=""`
-  attributes, no third-party requests. If a feature needs one, update the CSP deliberately.
+- Strict CSP in a `<meta http-equiv="Content-Security-Policy">` tag in `src/index.html`
+  (Pages can't send custom headers): scripts and styles from the site only (plus
+  Google Fonts CSS/fonts). No inline `<script>`, no inline `style=""` attributes,
+  no third-party requests. If a feature needs one, update the CSP deliberately.
+- The repo is public: never commit photos, children's names or anything personal.
 - Per-device state (prefs, tricky words) lives in localStorage under `tx-*` keys.
   Nothing personal is ever sent anywhere.
 
