@@ -23,7 +23,7 @@
   var prefs = (function () {
     var p = lsGet("tx-prefs", {}); if (!p || typeof p !== "object") p = {};
     if (!("pics" in p)) { p.en = false; p.pics = true; }
-    return { slow: !!p.slow, py: p.py !== false, en: !!p.en, pics: p.pics !== false, dark: !!p.dark };
+    return { slow: !!p.slow, py: p.py !== false, en: !!p.en, pics: p.pics !== false, dark: !!p.dark, sound: p.sound !== false };
   })();
   function applyTheme() { document.documentElement.setAttribute("data-theme", prefs.dark ? "dark" : "light"); }
   applyTheme();
@@ -33,6 +33,10 @@
   /* Dictation: phase idle → run → check → done. src "list" | "tricky"; retest = practising missed words again. */
   function newDict() { return { src: "list", listId: null, retest: false, queue: [], i: 0, phase: "idle", marks: {}, result: null }; }
   var D = newDict();
+  /* Play tab: phase picker → run → end. q = questions { w, choices[], firstTry }, i = current question,
+     wrong = choice indexes tried and wrong, solved = answered right, hint = pinyin shown, anim = one-off animation. */
+  function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null }; }
+  var G = newGame(), gTimer = null;
   var TOKEN = 0;
 
   /* ---------- helpers ---------- */
@@ -91,7 +95,10 @@
     chevL: ic(34, '<path d="M15 5l-7 7 7 7"/>', line(2.6)),
     chevR: ic(34, '<path d="M9 5l7 7-7 7"/>', line(2.6)),
     grid: ic(22, '<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>'),
-    one: ic(22, '<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M10.5 9.5l2-1.5v8"/>')
+    one: ic(22, '<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M10.5 9.5l2-1.5v8"/>'),
+    puzzle: ic(22, '<path d="M9.5 4.5a2.5 2.5 0 0 1 5 0V6H18a1 1 0 0 1 1 1v3.5h-1.5a2.5 2.5 0 0 0 0 5H19V19a1 1 0 0 1-1 1h-3.5v-1.5a2.5 2.5 0 0 0-5 0V20H6a1 1 0 0 1-1-1v-3.5h1.5a2.5 2.5 0 0 0 0-5H5V7a1 1 0 0 1 1-1h3.5z"/>'),
+    tick: ic(22, '<path d="M5 12.5l4.5 4.5L19 7.5"/>', line(3.2)),
+    bulb: ic(20, '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>', line(2))
   };
   function starFill(size) { return ic(size, '<path d="' + STAR + '"/>', 'fill="currentColor"'); }
   var RING = '<svg class="ring" viewBox="0 0 52 52" aria-hidden="true" focusable="false"><circle cx="26" cy="26" r="24" pathLength="100"/></svg>';
@@ -159,7 +166,7 @@
   /* One short how-to line per screen: simple Chinese (kid) + English (kid or parent). */
   function howto(cn, en, cls) { return '<p class="howto' + (cls ? " " + cls : "") + '">' + (cn ? '<span class="howto-cn" lang="zh-CN">' + esc(cn) + "</span> · " : "") + esc(en) + "</p>"; }
 
-  var TABS = [["learn", "学习", "Learn", IC.book], ["dict", "听写", "Dictation", IC.pencil], ["tricky", "难词", "Tricky", IC.star]];
+  var TABS = [["learn", "学习", "Learn", IC.book], ["play", "玩一玩", "Play", IC.puzzle], ["dict", "听写", "Dictation", IC.pencil], ["tricky", "难词", "Tricky", IC.star]];
   function nav() {
     var n = Object.keys(trickyMap()).length;
     return '<nav class="tabs" aria-label="Sections">' + TABS.map(function (t) {
@@ -385,6 +392,135 @@
       tile("tstart", IC.pencil, "练一练", "Practise these") + "</div>";
   }
 
+  /* ---------- Play: games on the selected list ---------- */
+  /* Game registry: add more games here (id, labels, how many playable items a list has, minimum to play). */
+  var GAMES = [
+    { id: "pictureQuiz", cn: "看图选词", en: "Picture quiz", sub: "Look at the picture, pick the word", icon: IC.puzzle,
+      items: function (L) { return L ? L.words.filter(function (w) { return w.img; }) : []; }, min: 3,
+      notEnough: "This week needs more pictures to play" }
+  ];
+  function gameById(id) { for (var i = 0; i < GAMES.length; i++) if (GAMES[i].id === id) return GAMES[i]; return null; }
+  /* tx-games: { "<gameId>": { "<listId>": { best, total } } } */
+  function gameScores() { var s = lsGet("tx-games", {}); return s && typeof s === "object" ? s : {}; }
+  function playView(L) {
+    if (G.phase === "run") return quizView();
+    if (G.phase === "end") return quizEndView();
+    var head = L ? top(listHead(L)) : top('<h1 class="title" lang="zh-CN">玩一玩</h1>');
+    if (!L) return head + '<div class="panel"><p>No spelling lists have been added yet.</p></div>';
+    var scores = gameScores(), thisWeek = L.id === nextId();
+    var cards = GAMES.map(function (g) {
+      var n = g.items(L).length, ok = n >= g.min, sc = scores[g.id] && scores[g.id][L.id];
+      var thumb = L.words.filter(function (w) { return w.img; })[0];
+      var note = !ok ? g.notEnough : sc ? (thisWeek ? "Best this week: " : "Best for this list: ") + sc.best + " / " + sc.total : n + " pictures to play";
+      return '<button type="button" class="game-card' + (ok ? "" : " off") + '" data-act="gstart" data-g="' + g.id + '"' + (ok ? "" : ' aria-disabled="true"') + ">" +
+        '<span class="gc-art" aria-hidden="true">' + (thumb && prefs.pics ? '<img src="' + esc(thumb.img) + '" alt="" width="640" height="480" decoding="async">' : g.icon) + "</span>" +
+        '<span class="gc-text"><span class="gc-cn" lang="zh-CN">' + g.cn + '</span><span class="gc-en">' + g.en + '</span><span class="gc-sub">' + g.sub + "</span>" +
+        '<span class="gc-note' + (ok ? "" : " warn") + '">' + esc(note) + "</span></span></button>";
+    }).join("");
+    return head + howto("选一个游戏", "Pick a game") + '<div class="games">' + cards + "</div>";
+  }
+  /* A round: every word with a picture, once, in random order; 2 other words from the same list as choices. */
+  function startQuiz() {
+    var L = curList(), g = gameById("pictureQuiz"); if (!L || !g) return;
+    var items = g.items(L); if (items.length < g.min) return;
+    clearTimeout(gTimer); stopSpeech();
+    G = newGame(); G.phase = "run"; G.game = g.id; G.listId = L.id;
+    G.q = shuffle(items).map(function (w) {
+      var others = shuffle(L.words.filter(function (o) { return o.hanzi !== w.hanzi; })).slice(0, 2);
+      return { w: w, choices: shuffle([w].concat(others)), firstTry: true };
+    });
+    render(); toTop();
+    var p = root.querySelector(".g-choice"); if (p) p.focus({ preventScroll: true });
+  }
+  function quizView() {
+    var n = G.q.length, q = G.q[G.i];
+    var dots = ""; for (var k = 0; k < n; k++) dots += "<span" + (k === G.i ? ' class="on"' : k < G.i ? ' class="done"' : "") + "></span>";
+    var choices = q.choices.map(function (c, ci) {
+      var right = G.solved && c.hanzi === q.w.hanzi, wrong = G.wrong.indexOf(ci) >= 0, off = wrong || (G.solved && !right);
+      var anim = G.anim && G.anim.i === ci ? " " + G.anim.type : "";
+      return '<button type="button" class="g-choice' + (right ? " right" : "") + (wrong ? " wrong" : "") + anim + '" data-act="gpick" data-i="' + ci + '"' + (off ? " disabled" : "") +
+        ' aria-label="' + (ci + 1) + ". " + esc(c.hanzi) + (right ? ", right" : "") + '">' +
+        '<span class="g-num" aria-hidden="true">' + (ci + 1) + '</span><span class="g-word"><span class="g-hz" lang="zh-CN">' + esc(c.hanzi) + "</span>" +
+        (G.hint ? '<span class="g-py">' + esc(c.pinyin || "") + "</span>" : "") + "</span>" + (right ? '<span class="g-tick" aria-hidden="true">' + IC.tick + "</span>" : "") + "</button>";
+    }).join("");
+    G.anim = null; /* bounce/wobble play once, on the render that follows the tap */
+    return '<div class="screen game">' +
+      '<div class="d-top"><button type="button" class="round-btn" data-act="gquit" aria-label="Back to games">' + IC.close + "</button>" +
+      '<div class="g-dots" role="img" aria-label="Question ' + (G.i + 1) + " of " + n + '">' + dots + '</div><span class="d-count">' + (G.i + 1) + "<span> / " + n + "</span></span></div>" +
+      '<section class="g-q" aria-label="Which word matches this picture?">' +
+      '<div class="g-media"><img class="g-pic" src="' + esc(q.w.img) + '" alt="" width="640" height="480" decoding="async">' +
+      '<p class="g-reveal" role="status">' + (G.solved ? '<span class="g-r-py">' + esc(q.w.pinyin || "") + '</span><span class="g-r-en">' + esc(q.w.english || "") + "</span>" : "") + "</p></div>" +
+      '<div class="g-side"><p class="g-prompt"><span class="howto-cn" lang="zh-CN">这是什么？</span> Which word is this?</p>' +
+      '<div class="g-choices">' + choices + "</div>" +
+      '<div class="g-tools">' + (G.solved ? '<button type="button" class="big-btn dark g-next" data-act="gnext"><span class="bb-cn" lang="zh-CN">' + (G.i < n - 1 ? "下一个" : "看结果") + '</span><span class="bb-en">' + (G.i < n - 1 ? "Next" : "Finish") + "</span>" + IC.arrowR + "</button>"
+        : '<button type="button" class="g-hint" data-act="ghint"' + (G.hint ? " disabled" : "") + '><span aria-hidden="true">💡</span><span lang="zh-CN">提示</span> Hint</button>') + "</div>" +
+      "</div></section></div>";
+  }
+  /* Answer: right → blue + tick, chime, say the word, show pinyin + English, next after ~1.5 s.
+     Wrong → boop, wobble, that choice fades and is disabled; keep trying. */
+  function quizPick(ci) {
+    if (G.phase !== "run" || G.solved) return;
+    var q = G.q[G.i], c = q.choices[ci]; if (!c || G.wrong.indexOf(ci) >= 0) return;
+    if (c.hanzi === q.w.hanzi) {
+      G.solved = true; G.anim = { i: ci, type: "bounce" }; render(); chime();
+      var t = TOKEN; setTimeout(function () { if (t === TOKEN && G.solved) speak(q.w.hanzi); }, 250);
+      var nx = root.querySelector(".g-next"); if (nx) nx.focus({ preventScroll: true });
+      clearTimeout(gTimer); gTimer = setTimeout(quizNext, 1600);
+    } else {
+      q.firstTry = false; G.wrong.push(ci); G.anim = { i: ci, type: "wobble" }; render(); boop();
+      var left = root.querySelector(".g-choice:not([disabled])"); if (left) left.focus({ preventScroll: true });
+    }
+  }
+  function quizNext() {
+    clearTimeout(gTimer); if (G.phase !== "run" || !G.solved) return;
+    stopSpeech();
+    if (G.i < G.q.length - 1) { G.i++; G.wrong = []; G.solved = false; G.hint = false; render(); var p = root.querySelector(".g-choice"); if (p) p.focus({ preventScroll: true }); }
+    else quizFinish();
+  }
+  /* End of round: tricky words for anything not right first time, best score per list. */
+  function quizFinish() {
+    var first = G.q.filter(function (q) { return q.firstTry; }).length, total = G.q.length;
+    applyTricky(G.q.map(function (q) { return { w: q.w, ok: q.firstTry }; }));
+    var all = gameScores(), mine = all[G.game] = all[G.game] || {}, prev = mine[G.listId];
+    mine[G.listId] = { best: Math.max(prev ? prev.best || 0 : 0, first), total: total };
+    lsSet("tx-games", all);
+    G.result = { first: first, total: total, best: mine[G.listId].best, newBest: !prev || first > (prev.best || 0) };
+    G.phase = "end"; render(); toTop();
+    var a = root.querySelector('[data-act="gagain"]'); if (a) a.focus({ preventScroll: true });
+  }
+  function quizEndView() {
+    var r = G.result, stars = starCount(r.first, r.total), sizes = [40, 48, 58, 48, 40];
+    var starRow = sizes.map(function (s, k) { return '<span class="ws s' + k + (k < stars ? " on" : "") + '">' + ic(s, '<path d="' + STAR + '"/>', 'stroke-width="1.2" stroke-linejoin="round"') + "</span>"; }).join("");
+    var head = r.first >= r.total ? ["太棒了！", r.first + " / " + r.total + " first try!"] : r.first > 0 ? ["做得好！", r.first + " / " + r.total + " first try!"] : ["加油！", "Good try! Let's play again."];
+    var missed = G.q.filter(function (q) { return !q.firstTry; }).length;
+    return '<div class="screen welldone game-end"><div class="confetti" aria-hidden="true"><span class="cf c1"></span><span class="cf c2"></span><span class="cf c3"></span><span class="cf c4"></span><span class="cf c5"></span><span class="cf c6"></span></div>' +
+      '<div class="wstars" role="img" aria-label="' + stars + ' out of 5 stars">' + starRow + "</div>" +
+      '<h1 class="wd-cn" lang="zh-CN">' + head[0] + '</h1><p class="wd-en">' + head[1] + "</p>" +
+      '<div class="scard"><p class="sn-cn"><span lang="zh-CN">看图选词</span> Picture quiz</p>' +
+      '<p class="sn-en">' + (r.newBest && r.first > 0 ? "New best for this list: " : "Best for this list: ") + r.best + " / " + r.total + "</p>" +
+      (missed ? '<p class="sn-en">' + missed + (missed === 1 ? " word" : " words") + " added to Tricky words to practise.</p>" : "") + "</div>" +
+      '<div class="screen-foot">' + howto("", "Play again with a new order, or go back to the games.", "wd-how") +
+      '<button type="button" class="big-btn yellow" data-act="gagain"><span class="bb-cn" lang="zh-CN">再玩一次</span><span class="bb-en">Play again</span></button>' +
+      '<button type="button" class="big-btn white" data-act="gback"><span class="bb-cn" lang="zh-CN">回到游戏</span><span class="bb-en">Back to games</span></button></div></div>';
+  }
+
+  /* ---------- sound effects (Web Audio, no files; Parent corner → Sounds) ---------- */
+  var AC = null;
+  function audioCtx() {
+    if (!AC) { var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; try { AC = new C(); } catch (e) { return null; } }
+    if (AC.state === "suspended") { try { AC.resume(); } catch (e) {} }
+    return AC;
+  }
+  function tone(freq, at, dur, type, vol, slideTo) {
+    var ac = audioCtx(); if (!ac) return;
+    var t = ac.currentTime + at, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t); if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function chime() { if (prefs.sound) { tone(784, 0, 0.18, "sine", 0.18); tone(1175, 0.11, 0.34, "sine", 0.16); } } /* G5 → D6, bright and short */
+  function boop() { if (prefs.sound) tone(260, 0, 0.22, "triangle", 0.14, 170); } /* soft low slide, not a buzzer */
+
   /* ---------- Parent corner ---------- */
   /* Add to Home Screen tip: phones and tablets only, and not once it's already running from the Home Screen. */
   function homeTip() {
@@ -406,7 +542,7 @@
       '<button type="button" class="pc-x" data-act="pcclose" aria-label="Close parent corner">' + IC.close + "</button></div>" +
       '<section class="pc-sec" aria-labelledby="pc-h-cards"><h3 id="pc-h-cards">On the word cards</h3><div class="sw-grid">' +
       sw("py", "Pinyin") + sw("pics", "Pictures") + sw("en", "English") + sw("slow", "Slow voice") + "</div></section>" +
-      '<section class="pc-sec" aria-labelledby="pc-h-screen"><h3 id="pc-h-screen">Screen</h3><div class="sw-grid">' + sw("dark", "Dark theme") + "</div></section>" +
+      '<section class="pc-sec" aria-labelledby="pc-h-screen"><h3 id="pc-h-screen">Sound and screen</h3><div class="sw-grid">' + sw("sound", "Sounds") + sw("dark", "Dark theme") + "</div></section>" +
       '<div class="pc-tip"><b>How it works</b><p>Learn: tap a word to hear it. Dictation: each word plays twice; she writes on paper, then checks with the faces. Missed words go to Tricky.</p></div>' + homeTip() +
       '<div class="pc-danger"><button type="button" class="pc-clear" data-act="tclear"' + (nt ? "" : " disabled") + ">" +
       (!nt ? "No tricky words on this device" : S.clearArm ? "Tap again to clear " + nt + " tricky word" + (nt === 1 ? "" : "s") : "Clear tricky words on this device") + "</button>" +
@@ -494,12 +630,13 @@
     L.words.forEach(function (w) { if (w.img) { var im = new Image(); im.decoding = "async"; im.src = w.img; } });
   }
   function render() {
-    var full = (S.mode === "dict" && D.phase !== "idle") || (S.mode === "learn" && (S.focus || S.pic));
+    var full = (S.mode === "dict" && D.phase !== "idle") || (S.mode === "learn" && (S.focus || S.pic)) || (S.mode === "play" && G.phase !== "picker");
     document.body.classList.toggle("full", full);
     if (S.loading) { root.innerHTML = appbar() + '<main class="main"><p class="loading">Loading spelling lists…</p></main>'; return; }
     if (S.loadError) { root.innerHTML = appbar() + '<main class="main"><p class="banner">' + esc(S.loadError) + "</p></main>"; return; }
     var k = focusKey(root), L = curList(), v;
     if (S.mode === "learn") v = learnView(L);
+    else if (S.mode === "play") v = playView(L);
     else if (S.mode === "dict") v = dictView(L);
     else v = trickyView();
     root.innerHTML = appbar() + '<main class="main">' + (full ? "" : banner()) + v + "</main>";
@@ -524,15 +661,19 @@
       .then(function () { if (t !== TOKEN) return; return speak(w.hanzi); })
       .then(function () { if (t === TOKEN) hl("dict", false); });
   }
-  /* Tricky words: a practise-again word gains a miss; a right word on the list twice in a row leaves it. */
-  function saveTricky() {
+  /* Tricky words (shared by Dictation and the picture quiz): a missed word gains a miss; a word that is already
+     tricky leaves after it's right twice in a row. results = [{ w, ok }] */
+  function applyTricky(results) {
     var m = trickyMap();
-    D.queue.forEach(function (w, i) {
-      var v = D.marks[i]; if (!v) return;
-      if (v === "no") { var o = m[w.hanzi] || { misses: 0, streak: 0 }; o.misses++; o.streak = 0; o.pinyin = w.pinyin; o.english = w.english; if (w.pic) o.pic = w.pic; if (w.img) o.img = w.img; m[w.hanzi] = o; }
+    results.forEach(function (r) {
+      var w = r.w;
+      if (!r.ok) { var o = m[w.hanzi] || { misses: 0, streak: 0 }; o.misses++; o.streak = 0; o.pinyin = w.pinyin; o.english = w.english; if (w.pic) o.pic = w.pic; if (w.img) o.img = w.img; m[w.hanzi] = o; }
       else if (m[w.hanzi]) { m[w.hanzi].streak = (m[w.hanzi].streak || 0) + 1; if (m[w.hanzi].streak >= 2) delete m[w.hanzi]; }
     });
     lsSet("tx-tricky", m);
+  }
+  function saveTricky() {
+    applyTricky(D.queue.map(function (w, i) { return D.marks[i] ? { w: w, ok: D.marks[i] === "ok" } : null; }).filter(Boolean));
   }
   /* Done pressed: save tricky words, then the sticker. A sticker is earned the first time a full dictation of a
      list is finished; later runs keep the best score. Practising missed words again doesn't change it. */
@@ -577,14 +718,21 @@
     /* Pick a week: select it, close the sheet, stay on the same tab (Dictation goes back to its start screen). */
     wspick: function (b) {
       var id = b.dataset.id;
-      if (id !== S.cur) { stopSpeech(); S.cur = id; S.fi = 0; S.pi = 0; if (S.mode === "dict") D = newDict(); }
+      if (id !== S.cur) { stopSpeech(); S.cur = id; S.fi = 0; S.pi = 0; if (S.mode === "dict") D = newDict(); if (S.mode === "play") G = newGame(); }
       wsOpener = null; render(); closeWeeks();
     },
     thisweek: function () {
       stopSpeech(); S.cur = defaultId(); S.fi = 0; S.pi = 0; if (S.mode === "dict") D = newDict(); render();
       var c = Array.prototype.filter.call(root.querySelectorAll(".title-btn"), function (x) { return x.offsetParent !== null; })[0]; if (c) c.focus({ preventScroll: true }); /* the pill itself is gone now */
     },
-    mode: function (b) { stopSpeech(); S.mode = b.dataset.m; S.focus = false; S.pic = false; S.clearArm = false; if (S.mode === "dict") D = newDict(); render(); },
+    mode: function (b) { stopSpeech(); clearTimeout(gTimer); S.mode = b.dataset.m; S.focus = false; S.pic = false; S.clearArm = false; if (S.mode === "dict") D = newDict(); if (S.mode === "play") G = newGame(); render(); },
+    gstart: function (b) { if (b.getAttribute("aria-disabled") === "true") return; audioCtx(); startQuiz(); }, /* first tap unlocks Web Audio on iOS */
+    gpick: function (b) { quizPick(+b.dataset.i); },
+    ghint: function () { if (G.phase !== "run") return; G.hint = true; render(); var c = root.querySelector(".g-choice:not([disabled])"); if (c) c.focus({ preventScroll: true }); },
+    gnext: quizNext,
+    gquit: function () { clearTimeout(gTimer); stopSpeech(); G = newGame(); render(); toTop(); var c = root.querySelector(".game-card"); if (c) c.focus({ preventScroll: true }); },
+    gagain: startQuiz,
+    gback: function () { G = newGame(); render(); toTop(); var c = root.querySelector(".game-card"); if (c) c.focus({ preventScroll: true }); },
     say: function (b) {
       var src = b.dataset.src, i = +b.dataset.i, w = wordFor(src, i); if (!w) return;
       var wasPlaying = S.playing; stopSpeech(); if (wasPlaying) render();
@@ -674,6 +822,12 @@
       e.preventDefault();
       var to = idx < 0 ? 0 : Math.max(0, Math.min(items.length - 1, idx + (k === "ArrowRight" ? 1 : -1)));
       if (items[to]) items[to].focus();
+      return;
+    }
+    /* Picture quiz: keys 1/2/3 pick a choice. */
+    if (S.mode === "play" && G.phase === "run" && /^[1-9]$/.test(k)) {
+      var q = G.q[G.i];
+      if (q && +k <= q.choices.length) { e.preventDefault(); if (!e.repeat) quizPick(+k - 1); }
       return;
     }
     if (S.mode === "dict" && D.phase === "run" && act !== "dstop") {

@@ -47,11 +47,11 @@ svg{display:block;flex:none}
 .logo,.pc-btn.pill{display:none}
 .main{max-width:1200px;margin:0 auto;padding:22px 20px calc(var(--tabbar) + 28px + env(safe-area-inset-bottom,0px))}
 body.full .main{padding-bottom:28px}
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;
-  min-height:var(--tabbar);padding:8px 12px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line)}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;
+  min-height:var(--tabbar);padding:8px 6px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line)}
 body.full .tabs{display:none}
 .tab{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:64px;padding:0;border:none;border-radius:16px;background:none;color:var(--muted)}
-.tab-ic{width:56px;height:32px;border-radius:999px;display:grid;place-items:center}
+.tab-ic{width:52px;height:32px;border-radius:999px;display:grid;place-items:center}
 .tab-cn{font-size:15px;font-weight:700;line-height:1.2}
 .tab-en{font-size:11px;font-weight:600;line-height:1}
 .tab[aria-current="page"]{color:var(--ink)}
@@ -76,10 +76,13 @@ body.full .tabs{display:none}
   .pc-btn.pill{display:flex}
   .main{padding:28px 32px 40px}
 }
-/* iPad portrait: logo square only, so logo + tabs + Parent corner fit on one row */
+/* iPad portrait: logo square only, and each tab stacks 中文 over English, so logo + 4 tabs + Parent corner fit one row */
 @media (min-width:768px) and (max-width:1023px){
   .logo-txt{display:none}
-  .tab{padding:0 16px}
+  .tab{position:relative;flex-direction:column;justify-content:center;gap:0;padding:0 14px}
+  .tab-cn{font-size:16px;line-height:1.15}
+  .tab-en{font-size:11px;line-height:1.1}
+  .badge{position:absolute;top:0;right:0;min-width:18px;height:18px;line-height:18px;font-size:11px}
 }
 
 /* ---------- Parent corner opener (gear) ---------- */
@@ -507,11 +510,77 @@ body.full .main{max-width:none;padding:0}
   .pv-card.no-pic{grid-template-columns:minmax(0,1fr)}
 }
 
+/* ---------- Play tab: game picker ---------- */
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:16px}
+.game-card{display:flex;align-items:center;gap:14px;min-height:120px;padding:12px;border-radius:24px;border:2px solid var(--edge);background:var(--t2);
+  box-shadow:0 4px 0 var(--lift);color:var(--ink);text-align:left;transition:transform .1s ease}
+.game-card:active:not(.off){transform:translateY(2px)}
+.game-card.off{cursor:default}
+.game-card.off .gc-art{filter:grayscale(.7);opacity:.7}
+.gc-art{flex:none;width:128px;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:var(--card);color:var(--grid-ink);display:grid;place-items:center}
+.gc-art img{display:block;width:100%;height:100%;object-fit:cover}
+.gc-art svg{width:48px;height:48px}
+.gc-text{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.gc-cn{font-family:var(--kai);font-size:26px;line-height:1.15}
+.gc-en{font-size:17px;font-weight:800;line-height:1.2}
+.gc-sub{font-size:14px;font-weight:600;color:var(--muted)}
+.gc-note{margin-top:6px;padding:2px 10px;border-radius:999px;background:var(--card);color:var(--grid-ink);font-size:13px;font-weight:700}
+.gc-note.warn{background:var(--tip);color:var(--ink)}
+
+/* ---------- Picture quiz: question screen ---------- */
+.screen.game{max-width:1100px}
+.g-dots{flex:1;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px}
+.g-dots span{width:12px;height:12px;border-radius:999px;background:var(--track-off)}
+.g-dots span.done{background:var(--grid)}
+.g-dots span.on{width:32px;background:var(--pencil)}
+.g-q{margin-top:16px;display:flex;flex-direction:column;gap:14px}
+.g-media{display:flex;flex-direction:column;gap:8px}
+.g-pic{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:24px;background:var(--card);box-shadow:0 6px 0 var(--lift)}
+.g-reveal{margin:0;min-height:32px;display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:4px 12px;text-align:center}
+.g-r-py{font-size:24px;font-weight:800;line-height:1.2}
+.g-r-en{font-size:17px;font-weight:600;color:var(--muted)}
+.g-side{display:flex;flex-direction:column;gap:12px}
+.g-prompt{margin:0;font-size:16px;font-weight:600;color:var(--muted);text-align:center}
+.g-choices{display:flex;flex-direction:column;gap:12px}
+.g-choice{position:relative;min-height:72px;padding:8px 60px;border-radius:20px;border:2px solid var(--line);background:var(--card);color:var(--ink);
+  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 var(--lift);transition:transform .1s ease,opacity .2s ease}
+.g-choice:active:not(:disabled){transform:translateY(2px)}
+.g-choice:disabled{cursor:default}
+.g-choice:disabled:not(.right){opacity:.5;box-shadow:none}
+.g-choice.wrong{opacity:.35}
+.g-choice.right{background:var(--good);border-color:var(--good);color:#FFFFFF;box-shadow:0 4px 0 #1F55B0;opacity:1}
+.g-num{position:absolute;left:14px;top:50%;translate:0 -50%;width:30px;height:30px;border-radius:8px;border:2px solid var(--track-off);border-bottom-width:4px;
+  display:none;place-items:center;font-size:13px;font-weight:800;color:var(--muted)}
+@media (hover:hover) and (pointer:fine){.g-num{display:grid}}
+.g-choice.right .g-num{border-color:rgba(255,255,255,.6);color:#FFFFFF}
+.g-word{display:flex;flex-direction:column;align-items:center;gap:2px}
+.g-hz{font-family:var(--kai);font-size:42px;line-height:1.1}
+.g-py{font-size:16px;font-weight:700;color:var(--muted)}
+.g-choice.right .g-py{color:#FFFFFF}
+.g-tick{position:absolute;right:14px;top:50%;translate:0 -50%;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);color:#FFFFFF;display:grid;place-items:center}
+.g-choice.bounce{animation:g-bounce .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes g-bounce{40%{scale:1.06}}
+.g-choice.wobble{animation:g-wobble .4s ease}
+@keyframes g-wobble{20%{translate:-7px 0}40%{translate:6px 0}60%{translate:-4px 0}80%{translate:2px 0}}
+.g-tools{min-height:56px;display:flex;justify-content:center;align-items:center}
+.g-hint{min-height:48px;padding:0 18px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:700}
+.g-hint [lang]{font-size:17px;font-weight:800}
+.g-hint:disabled{opacity:.5}
+.g-next{max-width:380px}
+/* iPad landscape and desktop: choices to the right of the picture */
+@media (min-width:1000px){
+  .g-q{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:center;gap:32px;margin-top:20px}
+  .g-hz{font-size:46px}
+}
+/* Short phones: a smaller picture so the three choices stay on screen */
+@media (max-width:767px) and (max-height:740px){.g-pic{max-height:34vh;width:auto;margin:0 auto}}
+
 /* ---------- reduced motion: no bounce, no scaling, no confetti fall, still bars ---------- */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
   .word:has(.word-main:active),.word.speaking,.tile:active,.big-btn:active,.hear:active .hear-disc,.listen:active{transform:none !important}
-  .bars span,.cf,.ws.on,.sticker-new.pop,.hear.speaking .hear-disc{animation:none !important}
+  .bars span,.cf,.ws.on,.sticker-new.pop,.hear.speaking .hear-disc,.g-choice.bounce,.g-choice.wobble{animation:none !important}
+  .g-choice:active,.game-card:active{transform:none !important}
   .bars span:nth-child(1){height:8px}.bars span:nth-child(3){height:12px}
   .pc[open]{animation:none}
   /* The hold ring is progress feedback, not decoration: keep it. */
