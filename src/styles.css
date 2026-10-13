@@ -529,6 +529,25 @@ body.full .main{max-width:none;padding:0}
 .game-card.g-listenPick{background:var(--t0)}
 .gc-sound{width:100%;height:100%;display:grid;place-items:center;background:var(--pencil);color:var(--on-pencil)}
 
+/* 缺字: the word in 田字格 with one dashed empty box; the right character drops into it */
+.game-card.g-missingChar{background:var(--t3)}
+.gc-miss{width:100%;height:100%;display:grid;place-items:center;background:var(--card)}
+.gc-miss .boxes{--box:44px}
+.g-miss{container-type:inline-size;width:100%;display:flex;flex-direction:column;align-items:center;gap:16px;padding:8px 0 0}
+.g-missbox{--box:min(120px,calc((100cqi - 16px) / var(--n)))}
+.g-missbox .tzg{border-width:3px}
+.tzg.gap{border-style:dashed;border-color:var(--grid);background:var(--row-on)}
+.tzg.gap::before,.tzg.gap::after{display:none}
+.tzg+.tzg.gap{border-left:3px dashed var(--grid)}
+.gap-py{font-family:var(--ui);font-style:normal;font-size:calc(var(--box) * .22);font-weight:800;color:var(--grid-ink)}
+.tzg.drop>span{animation:drop-in .5s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes drop-in{from{translate:0 -70%;opacity:0}}
+.g-say{min-height:52px;padding:0 20px 0 6px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);display:inline-flex;align-items:center;gap:10px;font-size:15px;font-weight:700}
+.g-say [lang]{font-size:18px;font-weight:800}
+.g-say .listen-ic{width:40px;height:40px;background:var(--pencil)}
+.g-say.speaking .listen-ic{animation:halo-sm 1s ease-in-out infinite}
+@keyframes halo-sm{50%{box-shadow:0 0 0 6px rgba(246,195,67,.3)}}
+
 /* 听音选字: big Hear again button, the hint picture appears under it */
 .g-listen{display:flex;flex-direction:column;align-items:center;gap:14px;padding:6px 0 0}
 .g-listen .hear{margin:0}
@@ -594,7 +613,7 @@ body.full .main{max-width:none;padding:0}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
   .word:has(.word-main:active),.word.speaking,.tile:active,.big-btn:active,.hear:active .hear-disc,.listen:active{transform:none !important}
-  .bars span,.cf,.ws.on,.sticker-new.pop,.hear.speaking .hear-disc,.g-choice.bounce,.g-choice.wobble{animation:none !important}
+  .bars span,.cf,.ws.on,.sticker-new.pop,.hear.speaking .hear-disc,.g-choice.bounce,.g-choice.wobble,.tzg.drop>span,.g-say.speaking .listen-ic{animation:none !important}
   .g-choice:active,.game-card:active{transform:none !important}
   .bars span:nth-child(1){height:8px}.bars span:nth-child(3){height:12px}
   .pc[open]{animation:none}

@@ -449,8 +449,55 @@
           '<button type="button" class="hear g-hear" data-act="gsay" data-hl="gsay"><span class="hear-disc">' + IC.spkBig + '</span><span class="hear-cn" lang="zh-CN">再听一次</span><span class="hear-en">Hear again</span></button>' +
           (show ? picOf(q.w, "g-hintpic") : "") + "</div>";
       },
-      onShow: function (q) { sayWordSoon(q.w, 400); } }
+      onShow: function (q) { sayWordSoon(q.w, 400); } },
+    { id: "missingChar", cn: "缺字", en: "Missing character", sub: "Find the character that's missing", kind: "choice",
+      how: ["找一找，缺了哪个字？", "Which character is missing?"], region: "Which character is missing?", hint: "media",
+      items: function (L) { return L ? L.words : []; }, min: 1,
+      notEnough: "This week has no words yet", ready: function (n) { return n + " words to play"; },
+      art: function (L) { var c = Array.from(L.words[0].hanzi); return '<span class="gc-miss"><span class="boxes"><span class="tzg"><span>' + esc(c[0]) + '</span></span><span class="tzg gap"><span></span></span></span></span>'; },
+      build: function (L) {
+        return shuffle(L.words).map(function (w) {
+          var pos = Math.floor(Math.random() * Array.from(w.hanzi).length), ans = Array.from(w.hanzi)[pos];
+          return { w: w, pos: pos, answer: ans, choices: missingChoices(L, w, pos).map(function (c) { return { text: c }; }), firstTry: true };
+        });
+      },
+      hasHint: function (q) { return !!charPinyin(q.w, q.pos); },
+      media: function (q) {
+        var chars = Array.from(q.w.hanzi), py = charPinyin(q.w, q.pos);
+        var boxesHtml = chars.map(function (c, i) {
+          if (i !== q.pos) return '<span class="tzg"><span>' + esc(c) + "</span></span>";
+          if (G.solved) return '<span class="tzg drop"><span>' + esc(c) + "</span></span>";
+          return '<span class="tzg gap"><span>' + (G.hint && py ? '<em class="gap-py">' + esc(py) + "</em>" : "") + "</span></span>";
+        }).join("");
+        var label = chars.map(function (c, i) { return i === q.pos && !G.solved ? "missing character" : c; }).join(", ");
+        return '<div class="g-miss"><span class="boxes n' + Math.min(chars.length, 8) + ' g-missbox" role="img" aria-label="' + esc(label) + '">' + boxesHtml + "</span>" +
+          '<button type="button" class="g-say" data-act="gsay" data-hl="gsay"><span class="listen-ic">' + IC.spkMid + '</span><span lang="zh-CN">再听一次</span> Hear again</button></div>';
+      },
+      onShow: function (q) { sayWordSoon(q.w, 400); },
+      onRight: function (q) { sayWordSoon(q.w, 650); }, /* after the character drops into its box */
+      nextAfter: 2200 }
   ];
+  /* 缺字 look-alikes (data/lookalikes.json): character → [most common mix-up, others…]. */
+  var LOOK = {};
+  function wordSet() { var s = {}; S.lists.forEach(function (l) { l.words.forEach(function (w) { s[w.hanzi] = true; }); }); return s; }
+  function charPinyin(w, pos) { var sy = (w.pinyin || "").trim().split(/\s+/); return sy.length === Array.from(w.hanzi).length ? sy[pos] : ""; }
+  /* The 2 wrong choices for the missing character: always the first look-alike, then one more at random;
+     never one that spells another word from any list; fall back to characters from this list's other
+     words, then from the nearest lists. */
+  function missingChoices(L, w, pos) {
+    var chars = Array.from(w.hanzi), ans = chars[pos], all = wordSet(), picks = [];
+    function ok(c) {
+      if (!c || c === ans || picks.indexOf(c) >= 0) return false;
+      var t = chars.slice(); t[pos] = c; return !all[t.join("")];
+    }
+    var la = Array.isArray(LOOK[ans]) ? LOOK[ans] : [];
+    if (ok(la[0])) picks.push(la[0]);
+    shuffle(la.slice(1)).forEach(function (c) { if (picks.length < 2 && ok(c)) picks.push(c); });
+    function fromWords(words) { shuffle(words).forEach(function (o) { if (o.hanzi === w.hanzi) return; shuffle(Array.from(o.hanzi)).forEach(function (c) { if (picks.length < 2 && ok(c)) picks.push(c); }); }); }
+    if (picks.length < 2) fromWords(L.words);
+    if (picks.length < 2) otherWords(L, [w.hanzi], 12).forEach(function (o) { fromWords([o]); });
+    return shuffle([ans].concat(picks));
+  }
   function gameById(id) { for (var i = 0; i < GAMES.length; i++) if (GAMES[i].id === id) return GAMES[i]; return null; }
   function curGame() { return gameById(G.game); }
   function focusGameCard(id) { var c = root.querySelector('.game-card[data-g="' + id + '"]') || root.querySelector(".game-card"); if (c) c.focus({ preventScroll: true }); }
@@ -947,6 +994,8 @@
   /* ---------- load data ---------- */
   booted = true;
   render();
+  fetch("data/lookalikes.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; })
+    .then(function (d) { LOOK = d && typeof d === "object" ? d : {}; }).catch(function () {}); /* only 缺字 uses it; it falls back without */
   fetch("data/lists.json", { cache: "no-cache" })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (d) { S.lists = TXL.sortLists((d && d.lists) || []); S.cur = pickDefault(); S.loading = false; render(); })
