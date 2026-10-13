@@ -526,6 +526,21 @@ body.full .main{max-width:none;padding:0}
 .gc-sub{font-size:14px;font-weight:600;color:var(--muted)}
 .gc-note{margin-top:6px;padding:2px 10px;border-radius:999px;background:var(--card);color:var(--grid-ink);font-size:13px;font-weight:700}
 .gc-note.warn{background:var(--tip);color:var(--ink)}
+.game-card.g-listenPick{background:var(--t0)}
+.gc-sound{width:100%;height:100%;display:grid;place-items:center;background:var(--pencil);color:var(--on-pencil)}
+
+/* 听音选字: big Hear again button, the hint picture appears under it */
+.g-listen{display:flex;flex-direction:column;align-items:center;gap:14px;padding:6px 0 0}
+.g-listen .hear{margin:0}
+.g-listen .hear-disc{margin-bottom:14px}
+.g-hintpic{display:block;width:min(100%,300px);height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:18px;background:var(--card)}
+.g-hintpic.emoji{display:grid;place-items:center;font-size:84px;line-height:1}
+/* phones: smaller Hear again once a picture shows, so the choices stay on screen */
+@media (max-width:767px){
+  .g-listen.with-pic .hear-disc{width:120px;height:120px;margin-bottom:8px}
+  .g-listen.with-pic .hear-disc svg{width:56px;height:56px}
+  .g-listen.with-pic .g-hintpic{width:min(100%,220px)}
+}
 
 /* ---------- Picture quiz: question screen ---------- */
 .screen.game{max-width:1100px}
