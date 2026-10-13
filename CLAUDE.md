@@ -16,14 +16,16 @@ open a shared link, tap a word to hear it in Mandarin, and run a mock dictation.
   Google Fonts CSS/fonts). No inline `<script>`, no inline `style=""` attributes,
   no third-party requests. If a feature needs one, update the CSP deliberately.
 - The repo is public: never commit photos, children's names or anything personal.
-- Per-device state (prefs, tricky words) lives in localStorage under `tx-*` keys.
+- Per-device state lives in localStorage under `tx-*` keys (see Device storage).
   Nothing personal is ever sent anywhere.
 
 ## Layout
-- `src/index.html` — page shell
+- `src/index.html` — page shell: CSP + PWA meta tags, `#root`, and the Parent corner `<dialog id="parent">`
 - `src/app.js` — the whole app (render functions + delegated `data-act` click handlers)
-- `src/styles.css` — design tokens on `:root` (light + dark), 田字格 boxes, components
+- `src/styles.css` — design tokens on `:root` (light; dark under `[data-theme="dark"]`), 田字格 boxes, components
 - `src/data/lists.json` — ALL spelling-list data
+- `src/manifest.webmanifest`, `src/icons/` — Add to Home Screen (icons 192, 512 incl. maskable,
+  180 apple-touch-icon). `*.png` is gitignored except `src/icons/*.png`.
 - `scripts/validate_lists.py` — checks lists.json; CI runs it before deploying
 
 ## Run locally
@@ -58,12 +60,15 @@ On this Windows machine `python3` is only the Store stub; use `py -3` instead.
 ```json
 { "lists": [
   { "id": "l14", "number": "十四", "date": "2026-10-13",
-    "words": [ { "hanzi": "空气", "pinyin": "kōng qì", "english": "air" } ] }
+    "words": [ { "hanzi": "空气", "pinyin": "kōng qì", "english": "air", "pic": "🎈" } ] }
 ] }
 ```
 - `id`: "l" + the list number in Arabic numerals (十四 → l14, 二十一 → l21). Must be unique.
 - `number`: the Chinese numeral exactly as printed in the heading 听写（十四）.
 - `date`: test date as YYYY-MM-DD (the year is printed on the sheet).
+- `pic` (optional): ONE emoji shown as the word's picture. Child-safe, clear meaning, and
+  widely supported (Unicode 13 or older so older iPads show it). Leave it out if nothing fits
+  well; the card then simply has no picture.
 - Keep `lists` sorted by date. The app opens on the next upcoming list automatically.
 
 ## Adding lists from a photo of the spelling sheet
@@ -73,24 +78,50 @@ When the user gives photos of a 听写 sheet:
 2. Copy the characters and the PRINTED hanyu pinyin exactly, tone marks included
    (e.g. keep neutral tones like "xīng xing" as printed). Separate syllables with spaces.
 3. Write a short, simple English meaning a 7-year-old understands (1–4 words).
-4. Ignore student names, class, school and handwriting. Never commit the photos
+4. Pick a `pic` emoji for each word (see Data format); leave it out if nothing fits.
+5. Ignore student names, class, school and handwriting. Never commit the photos
    themselves (they're gitignored) and never store a child's name anywhere.
-5. If a list with the same number + date exists, replace it; otherwise add it.
-6. Run `python3 scripts/validate_lists.py`, show the user the new words for a
-   quick check, then commit (`Add 听写（N）`) and push when they confirm.
+6. If a list with the same number + date exists, replace it; otherwise add it.
+7. Run `python3 scripts/validate_lists.py`, show the user the new words and pictures
+   for a quick check, then commit (`Add 听写（N）`) and push when they confirm.
 
-## Design notes
-- Hero is the list title 听写（N） in a Kai (楷体) font stack, like the school sheet.
-- Each character sits in a green 田字格 box, like the child's exercise book.
-- Palette: mint paper `--paper`, green grid `--grid`, pencil yellow `--pencil` for
-  primary actions, red `--red` only for wrong answers. UI font Lexend.
-- Every screen starts with a one-line `.howto` instruction; keep these accurate
-  when changing a flow.
-- Copy is plain, sentence case, written for parents.
+## Design
+Kid-first screens for a 6–8 year old, with parent controls tucked into the Parent corner.
+- Fonts: UI **Baloo 2** (Google Fonts); characters and list titles in a Kai (楷体) stack, like the school sheet.
+- Tokens on `:root`: mint paper `--paper`, green grid `--grid`, pencil yellow `--pencil`
+  (+ `--pencil-shadow` under yellow buttons) for primary actions, blue `--good` for "got it",
+  orange `--again` for "practise again". **No red for mistakes.** Card tints `--t0`…`--t4` cycle per word.
+- Light theme (the mockups) is the default on every device. Dark is opt-in from the Parent
+  corner (`data-theme="dark"` on `<html>`), never from the device setting.
+- Each character sits in a green 田字格 box (`.tzg`); boxes size to their card with a container query.
+- Navigation: bottom tab bar under 768px, segmented tabs in a top app bar from 768px.
+  Dictation, Check, Well done and focus mode are full screen (`body.full`: no bars).
+- Screens: Learn (sticker strip, word cards, Play all tile, One by one → focus mode),
+  Dictation (Hear again, empty 田字格, Next), Check your paper (two faces per word; Done
+  once all are marked), Well done (stars scaled to 5, sticker + sticker book), Tricky.
+- Parent corner: `<dialog>`; press-and-hold 1.5 s on touch, click/keyboard elsewhere.
+  Holds the list picker, Pinyin/Pictures/English/Slow voice + Dark theme switches, how it
+  works, Add to Home Screen tip (phones/tablets), clear tricky words, reset stickers.
+- Every screen has one short `.howto` line (bilingual on kid screens); keep them accurate
+  when changing a flow. Labels are simple Chinese + small English.
+- Keyboard: Space hears, ←/→ move between words, Enter is next in dictation. Visible
+  4px `--grid` focus ring. Kid tap targets ≥ 48px. `prefers-reduced-motion` turns off
+  bounce, confetti, star pop and pulsing.
+- Calm and positive: no timers, no fail sounds; 0 correct still says "Good try!".
+
+## Device storage (localStorage, wrapped in try/catch)
+- `tx-prefs`: `{ slow, py, en, pics, dark }` (English and dark default off).
+- `tx-tricky`: `{ "<hanzi>": { misses, streak, pinyin, english, pic } }`; a word leaves
+  after it's marked right twice in a row.
+- `tx-stickers`: `{ "<listId>": { best, total, perfect, at } }`; earned the first time a full
+  dictation of that list is finished; keeps the best score; practising missed words again
+  doesn't change it. `navigator.storage.persist()` is requested once, at the first sticker.
 
 ## Ideas not built yet
 - Pre-generated audio with Azure Speech (neural zh-CN voice, SSML `<phoneme>` with
   the printed pinyin so polyphones like 地 are always right), saved as mp3 per word
   under `src/audio/` and played instead of browser speech when present.
 - Stroke-order animation per character.
+- Service worker for offline use (the manifest and icons are in place already).
+- Self-hosted LXGW WenKai subset so Android shows a Kai font too.
 - Support for several classes or levels (one lists file per class).
