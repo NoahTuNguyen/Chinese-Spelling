@@ -27,12 +27,16 @@ open a shared link, tap a word to hear it in Mandarin, and run a mock dictation.
 - `src/img/` — one 640×480 WebP illustration per word, named by toneless pinyin (`caihong.webp`)
 - `src/manifest.webmanifest`, `src/icons/` — Add to Home Screen (icons 192, 512 incl. maskable,
   180 apple-touch-icon). `*.png` is gitignored except `src/icons/*.png`.
+- `src/lists-logic.js` — date rules: `pickDefaultList(lists, now)`, `nextUpcoming`, `isPast`,
+  `TEST_DAY_CUTOFF_HOUR` (loaded before app.js as `window.TXLists`; also `require`-able in Node)
 - `scripts/validate_lists.py` — checks lists.json; CI runs it before deploying
+- `scripts/test_default_list.js` — checks `pickDefaultList` (`node scripts/test_default_list.js`)
 
 ## Run locally
 ```
 python3 -m http.server 8080 -d src     # then open http://localhost:8080
 python3 scripts/validate_lists.py      # run after every change to lists.json
+node scripts/test_default_list.js      # run after changing src/lists-logic.js
 ```
 (Opening index.html directly from disk won't work: it fetches data/lists.json.)
 On this Windows machine `python3` is only the Store stub; use `py -3` instead.
@@ -80,7 +84,10 @@ On this Windows machine `python3` is only the Store stub; use `py -3` instead.
 - `sentence` + `sentencePinyin` (optional): one short Primary 1–2 level example sentence using
   the word, and its pinyin (syllables separated by spaces, tone changes of 一/不 marked as in
   school books, e.g. "yí dào", "bú luàn"; Western punctuation).
-- Keep `lists` sorted by date. The app opens on the next upcoming list automatically.
+- Keep `lists` sorted by date. The app opens on the default list: on a test day before 15:00
+  that day's list, otherwise the first list dated after today, else the latest list
+  (`pickDefaultList` in `src/lists-logic.js`). `?list=l15` overrides it; the last-viewed list
+  is deliberately not remembered.
 
 ## Pictures (`src/img/`)
 - AI illustrations (Gemini), one per word, 640×480 WebP (~quality 82, centre-crop to 4:3),
@@ -136,11 +143,14 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
 - Picture card (`S.pic`, from `ⓘ more` or focus mode's 看图 More): big picture, word, pinyin,
   Listen, English explanation, example sentence + pinyin with its own play button;
   prev/next, swipe, ←/→, Esc or ✕ closes back to where it was opened.
-- Screens: Learn (sticker strip, word cards, Play all tile, One by one → focus mode),
+- Week strip (`.weeks`): one chip per list (date, 听写 number, sticker state; Next tag; past
+  dimmed) under the title on Learn, focus mode and the Dictation start screen. It is the only
+  way to choose a list. "回到本周 Back to this week" shows when the chosen list isn't the default.
+- Screens: Learn (week strip, word cards, Play all tile, One by one → focus mode),
   Dictation (Hear again, empty 田字格, Next), Check your paper (two faces per word; Done
   once all are marked), Well done (stars scaled to 5, sticker + sticker book), Tricky.
 - Parent corner: `<dialog>`; press-and-hold 1.5 s on touch, click/keyboard elsewhere.
-  Holds the list picker, Pinyin/Pictures/English/Slow voice + Dark theme switches, how it
+  Holds the Pinyin/Pictures/English/Slow voice + Dark theme switches, how it
   works, Add to Home Screen tip (phones/tablets), clear tricky words, reset stickers.
 - Every screen has one short `.howto` line (bilingual on kid screens); keep them accurate
   when changing a flow. Labels are simple Chinese + small English.
