@@ -38,6 +38,9 @@
   function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null }; }
   var G = newGame(), gTimer = null;
   var TOKEN = 0;
+  /* Set just before the first render: voice detection can finish while this script is still starting up
+     (some browsers have the voice list ready at once), and must not render before everything is defined. */
+  var booted = false;
 
   /* ---------- helpers ---------- */
   var DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -121,7 +124,7 @@
     var prev = voiceState;
     if (cn.length) { VOICE = cn[0]; voiceState = "ok"; }
     else { var any = vs.filter(function (v) { return /^(zh|cmn)/i.test(v.lang); })[0]; if (any) { VOICE = any; voiceState = "other"; } else { VOICE = null; voiceState = "none"; } }
-    if (prev !== voiceState) render();
+    if (prev !== voiceState && booted) render();
   }
   if (synth) {
     chooseVoice();
@@ -877,6 +880,7 @@
   }
 
   /* ---------- load data ---------- */
+  booted = true;
   render();
   fetch("data/lists.json", { cache: "no-cache" })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
