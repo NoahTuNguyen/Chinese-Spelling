@@ -13,16 +13,8 @@
   --tabbar:86px;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#0F1A15;--card:#1A2620;--ink:#E8F0EB;--muted:#A6B6AD;--line:#30423A;
-  --grid:#5BC08C;--grid-dash:rgba(91,192,140,.45);--grid-ink:#86D9AE;--mint-pill:#24432F;
-  --pencil:#F6C343;--pencil-shadow:#B88A12;--pencil-ring:#4A3F17;--on-pencil:#1D2B36;
-  --good:#3D7EE8;--again:#E07A1F;--badge:#E07A1F;--danger-text:#F59A6B;
-  --t0:#3A3421;--t1:#2D2944;--t2:#1E2E43;--t3:#3D2C22;--t4:#1E3A2B;
-  --edge:#2A3A31;--lift:rgba(0,0,0,.35);--bars:#C3B9FF;
-  --off:#2A3830;--track-off:#4C5F55;--row-line:#2C3D34;--row-past:#16211B;--row-on:#1E3A2B;
-  --tip:#332D17;--scrim:rgba(0,0,0,.62);--solid:#E8F0EB;--on-solid:#0F1A15;
-  color-scheme:dark;}}
+/* Dark theme is opt-in (Parent corner → Dark theme), not tied to the device setting:
+   the kid view should look like the mint exercise-book mockups by default. */
 :root[data-theme="dark"]{
   --paper:#0F1A15;--card:#1A2620;--ink:#E8F0EB;--muted:#A6B6AD;--line:#30423A;
   --grid:#5BC08C;--grid-dash:rgba(91,192,140,.45);--grid-ink:#86D9AE;--mint-pill:#24432F;

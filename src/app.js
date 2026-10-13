@@ -9,13 +9,15 @@
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
   /* ---------- state ---------- */
-  /* tx-prefs: { slow, py, en, pics }. Saves from before the redesign have no "pics" and had English on
+  /* tx-prefs: { slow, py, en, pics, dark }. Saves from before the redesign have no "pics" and had English on
      by default, so those start with English off like new devices. */
   var prefs = (function () {
     var p = lsGet("tx-prefs", {}); if (!p || typeof p !== "object") p = {};
     if (!("pics" in p)) { p.en = false; p.pics = true; }
-    return { slow: !!p.slow, py: p.py !== false, en: !!p.en, pics: p.pics !== false };
+    return { slow: !!p.slow, py: p.py !== false, en: !!p.en, pics: p.pics !== false, dark: !!p.dark };
   })();
+  function applyTheme() { document.documentElement.setAttribute("data-theme", prefs.dark ? "dark" : "light"); }
+  applyTheme();
   var S = { lists: [], cur: null, mode: "learn", playing: false, clearArm: false, pcAll: false, loading: true, loadError: "" };
   var D = { src: "list", queue: [], i: 0, phase: "idle", marks: {}, saved: false };
   var TOKEN = 0;
@@ -259,6 +261,7 @@
       (more > 0 ? '<button type="button" class="pc-more" data-act="pcmore">Show ' + more + " more list" + (more === 1 ? "" : "s") + "</button>" : "") + "</div></section>" +
       '<section class="pc-sec" aria-labelledby="pc-h-cards"><h3 id="pc-h-cards">On the word cards</h3><div class="sw-grid">' +
       sw("py", "Pinyin") + sw("pics", "Pictures") + sw("en", "English") + sw("slow", "Slow voice") + "</div></section>" +
+      '<section class="pc-sec" aria-labelledby="pc-h-screen"><h3 id="pc-h-screen">Screen</h3><div class="sw-grid">' + sw("dark", "Dark theme") + "</div></section>" +
       '<div class="pc-tip"><b>How it works</b><p>Learn: tap a word to hear it. Dictation: each word plays twice; she writes on paper, then checks her answers. Missed words go to Tricky.</p></div>' +
       '<button type="button" class="pc-clear" data-act="tclear"' + (nt ? "" : " disabled") + ">" +
       (!nt ? "No tricky words on this device" : S.clearArm ? "Tap again to clear " + nt + " tricky word" + (nt === 1 ? "" : "s") : "Clear tricky words on this device") + "</button></div>";
@@ -360,7 +363,7 @@
         if (t === TOKEN) { S.playing = false; render(); }
       })();
     },
-    pref: function (b) { var k = b.dataset.k; prefs[k] = !prefs[k]; lsSet("tx-prefs", prefs); render(); },
+    pref: function (b) { var k = b.dataset.k; prefs[k] = !prefs[k]; lsSet("tx-prefs", prefs); applyTheme(); render(); },
     parent: function (b, e) {
       /* Keyboard (detail 0) and mouse open straight away; a short tap asks for a hold instead. */
       if (e.detail === 0 || lastPointer === "mouse") openParent(b);
