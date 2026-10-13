@@ -32,6 +32,22 @@ python3 -m http.server 8080 -d src     # then open http://localhost:8080
 python3 scripts/validate_lists.py      # run after every change to lists.json
 ```
 (Opening index.html directly from disk won't work: it fetches data/lists.json.)
+On this Windows machine `python3` is only the Store stub; use `py -3` instead.
+
+## Deployment
+- Host: GitHub Pages, source "GitHub Actions" (no Azure, no secrets needed).
+- Repo: `NoahTuNguyen/Chinese-Spelling` (public). Live: https://noahtunguyen.github.io/Chinese-Spelling/
+- Workflow `.github/workflows/deploy.yml`: on push to `main` (or manual run) it
+  validates `lists.json`, uploads `src/` and deploys. A failed validation blocks the deploy.
+- Pages caches files for ~10 min, so app.js/styles.css changes can take a few
+  minutes to reach phones; lists.json is fetched with `no-cache`.
+- Status: `gh run list --workflow deploy.yml` and `gh run watch <run-id>`
+  (or the repo's Actions tab).
+- Re-run: `gh workflow run deploy.yml` deploys the current `main`;
+  `gh run rerun <run-id>` repeats a specific run.
+- Roll back: `git revert <bad-commit>` and push (preferred, since it sticks).
+  For a quick fix, `gh run rerun <older-successful-run-id>` redeploys that older
+  commit until the next push to `main`.
 
 ## Data format (`src/data/lists.json`)
 ```json
