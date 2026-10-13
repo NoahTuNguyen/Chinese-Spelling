@@ -28,7 +28,7 @@
   applyTheme();
   /* focus/fi: Learn's one-word-at-a-time view and its word index. pic/pi: the picture card and its word index
      (picFrom: "learn" grid or "focus" mode, where closing it returns to). */
-  var S = { lists: [], cur: null, mode: "learn", focus: false, fi: 0, pic: false, pi: 0, picFrom: "learn", playing: false, clearArm: false, resetArm: false, pcAll: false, loading: true, loadError: "" };
+  var S = { lists: [], cur: null, mode: "learn", focus: false, fi: 0, pic: false, pi: 0, picFrom: "learn", playing: false, clearArm: false, resetArm: false, loading: true, loadError: "" };
   /* Dictation: phase idle → run → check → done. src "list" | "tricky"; retest = practising missed words again. */
   function newDict() { return { src: "list", listId: null, retest: false, queue: [], i: 0, phase: "idle", marks: {}, result: null }; }
   var D = newDict();
@@ -39,14 +39,16 @@
   var DAYL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var MONL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  function sortLists(ls) { return ls.slice().sort(function (a, b) { return (a.date || "").localeCompare(b.date || ""); }); }
-  function todayStr() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
-  function nextId() { var t = todayStr(); for (var i = 0; i < S.lists.length; i++) if (S.lists[i].date && S.lists[i].date >= t) return S.lists[i].id; return null; }
+  /* Date rules (default list, next, past) live in lists-logic.js so scripts/test_default_list.js can check them. */
+  var TXL = window.TXLists;
+  function todayStr() { return TXL.ymd(new Date()); }
+  function nextId() { return TXL.nextUpcoming(S.lists, new Date()); }
+  function defaultId() { return TXL.pickDefaultList(S.lists, new Date()); }
+  /* Opening list: ?list=l15 overrides; otherwise the default. The last-viewed list is deliberately not remembered. */
   function pickDefault() {
     var q = new URLSearchParams(location.search).get("list");
     if (q && S.lists.some(function (l) { return l.id === q; })) return q;
-    if (!S.lists.length) return null;
-    return nextId() || S.lists[S.lists.length - 1].id;
+    return defaultId();
   }
   function listById(id) { for (var i = 0; i < S.lists.length; i++) if (S.lists[i].id === id) return S.lists[i]; return null; }
   function curList() { return listById(S.cur); }
@@ -184,15 +186,35 @@
   function top(main, extra) { return '<div class="top"><div class="top-main">' + main + "</div>" + gearBtn() + (extra || "") + "</div>"; }
   function dateLine(L) { return L && L.date ? '<p class="date"><span class="d-short">' + esc(fmtShort(L.date)) + '</span><span class="d-long">' + esc(fmtLong(L.date)) + "</span>" + whenTag(L.date) + "</p>" : ""; }
 
-  function stickerStrip() {
-    if (!S.lists.length) return "";
-    var st = stickers(), nx = nextId(), got = 0;
-    var dots = S.lists.map(function (l) {
-      var s = st[l.id];
-      if (s) { got++; return '<span class="stk got' + (s.perfect ? " perfect" : "") + '">' + starFill(16) + "</span>"; }
-      return '<span class="stk' + (l.id === nx ? " now" : "") + '"></span>';
+  /* Week strip: one chip per list in date order (short date, 听写 number, sticker state). Picks the list;
+     replaces the old sticker strip and the Parent corner list picker. */
+  function weekStrip() {
+    if (S.lists.length < 2) return "";
+    var st = stickers(), nx = nextId(), now = new Date();
+    var chips = S.lists.map(function (l) {
+      var s = st[l.id], d = parseDate(l.date), past = TXL.isPast(l, now);
+      var state = s ? (s.perfect ? "perfect sticker" : "sticker earned") : "no sticker yet";
+      var label = "听写" + (l.number || l.id) + ", " + (d ? fmtLong(l.date) : "no date") + ", " + state + (l.id === nx ? ", next test" : "");
+      return '<button type="button" class="wk' + (past ? " past" : "") + '" data-act="pick" data-id="' + esc(l.id) + '" aria-pressed="' + (l.id === S.cur) + '" aria-label="' + esc(label) + '">' +
+        (l.id === nx ? '<span class="wk-next" aria-hidden="true">Next</span>' : "") +
+        '<span class="wk-date" aria-hidden="true">' + (d ? d.getDate() + " " + MON[d.getMonth()] : "—") + "</span>" +
+        '<span class="wk-num" lang="zh-CN" aria-hidden="true">' + esc(l.number || l.id) + "</span>" +
+        '<span class="wk-stk' + (s ? " got" + (s.perfect ? " perfect" : "") : "") + '" aria-hidden="true">' + (s ? starFill(14) : "") + "</span></button>";
     }).join("");
-    return '<div class="stickers" role="img" aria-label="My stickers: ' + got + " of " + S.lists.length + '"><span class="stk-label"><b lang="zh-CN">我的贴纸</b> My stickers</span><span class="stk-row">' + dots + "</span></div>";
+    return '<div class="weeks" role="group" aria-label="Spelling lists by test date"><div class="wk-row">' + chips + "</div></div>";
+  }
+  /* Keep the strip where the child left it; when the chosen list changes, bring its chip into view. */
+  var wkScroll = { cur: null, left: 0 };
+  function placeWeekStrip() {
+    var sc = root.querySelector(".weeks"); if (!sc) return;
+    var chip = sc.querySelector('.wk[aria-pressed="true"]');
+    if (wkScroll.cur === S.cur) { sc.scrollLeft = wkScroll.left; }
+    else if (chip) {
+      var l = chip.offsetLeft, max = sc.scrollWidth - sc.clientWidth; /* .weeks is position:relative, so offsetLeft is within it */
+      if (l < sc.scrollLeft || l + chip.offsetWidth > sc.scrollLeft + sc.clientWidth) sc.scrollLeft = Math.max(0, Math.min(max, l - (sc.clientWidth - chip.offsetWidth) / 2));
+    }
+    wkScroll = { cur: S.cur, left: sc.scrollLeft };
+    sc.addEventListener("scroll", function () { wkScroll.left = sc.scrollLeft; }, { passive: true });
   }
   function boxes(text, cls, empty) {
     var chars = Array.from(text || "");
@@ -223,14 +245,22 @@
     return '<ul class="keys" aria-label="Keyboard shortcuts"><li><kbd>Space</kbd>Hear the word</li><li><kbd aria-label="Left arrow">←</kbd><kbd aria-label="Right arrow">→</kbd>Move between words</li><li><kbd>Enter</kbd>Next word in dictation</li></ul>';
   }
 
+  /* List heading: 本周 pill on the next list; a "Back to this week" pill when another list is chosen. */
+  function backPill(cls) {
+    var d = defaultId();
+    return d && S.cur !== d ? '<button type="button" class="back-week' + (cls ? " " + cls : "") + '" data-act="thisweek"><span lang="zh-CN">回到本周</span> Back to this week</button>' : "";
+  }
+  function listHead(L) {
+    return (L.id === nextId() ? '<span class="pill-week"><span lang="zh-CN">本周</span> This week</span>' : "") +
+      '<div class="title-row"><h1 class="title" lang="zh-CN">' + esc(titleOf(L)) + "</h1>" + backPill() + "</div>" + dateLine(L);
+  }
+
   /* ---------- Learn ---------- */
   function learnView(L) {
     if (!L) return top('<h1 class="title">听写</h1>') + '<div class="panel"><p>No spelling lists have been added yet.</p></div>';
     if (S.pic) return picView(L);
     if (S.focus) return focusView(L);
-    var main = (L.id === nextId() ? '<span class="pill-week"><span lang="zh-CN">本周</span> This week</span>' : "") +
-      '<h1 class="title" lang="zh-CN">' + esc(titleOf(L)) + "</h1>" + dateLine(L);
-    return top(main, stickerStrip()) +
+    return top(listHead(L), weekStrip()) +
       '<div class="learn-bar">' + howto("点一点，听一听", "Tap a word to hear it.") +
       '<button type="button" class="onebyone" data-act="focus">' + IC.one + '<span lang="zh-CN">一个一个</span> One by one</button></div>' +
       '<div class="grid">' + L.words.map(function (w, i) { return card(w, i, "learn", "", true); }).join("") +
@@ -242,8 +272,8 @@
     var dots = ""; for (var k = 0; k < n; k++) dots += "<span" + (k === i ? ' class="on"' : "") + "></span>";
     return '<div class="focus">' +
       '<div class="f-top"><button type="button" class="f-all" data-act="unfocus">' + IC.grid + '<span class="f-all-cn" lang="zh-CN">全部</span><span class="f-all-en">All words</span></button>' +
-      '<div class="f-title"><h1 class="f-h" lang="zh-CN">' + esc(titleOf(L)) + "</h1>" + (L.date ? '<p class="f-date">' + esc(fmtShort(L.date)) + ", " + esc(whenText(L.date)) + "</p>" : "") + "</div>" +
-      '<div class="f-pc">' + gearBtn() + pillBtn() + "</div></div>" +
+      '<div class="f-title"><h1 class="f-h" lang="zh-CN">' + esc(titleOf(L)) + "</h1>" + (L.date ? '<p class="f-date">' + esc(fmtShort(L.date)) + ", " + esc(whenText(L.date)) + "</p>" : "") + backPill("f-back") + "</div>" +
+      '<div class="f-pc">' + gearBtn() + pillBtn() + "</div></div>" + weekStrip() +
       '<div class="f-stage">' +
       '<button type="button" class="f-nav prev" data-act="fprev" aria-label="Previous word"' + (i === 0 ? " disabled" : "") + ">" + IC.chevL + "</button>" +
       '<div class="f-card t' + (i % 5) + '" data-hl="focus-' + i + '">' + BARS +
@@ -290,7 +320,7 @@
     if (D.phase === "run") return runView();
     if (D.phase === "check") return checkView();
     if (D.phase === "done") return doneView();
-    var head = top('<h1 class="title" lang="zh-CN">' + esc(L ? titleOf(L) : "听写") + "</h1>" + dateLine(L));
+    var head = L ? top(listHead(L), weekStrip()) : top('<h1 class="title" lang="zh-CN">听写</h1>');
     if (!L) return head + '<div class="panel"><p>No list to practise yet.</p></div>';
     return head + howto("听一听，写一写", "Listen, then write it on your paper.") +
       '<div class="start"><button type="button" class="big-btn yellow start-btn" data-act="dstart">' + IC.pencil + '<span class="bb-cn" lang="zh-CN">开始听写</span><span class="bb-en">Start</span></button>' +
@@ -386,29 +416,10 @@
     return '<button type="button" class="sw" role="switch" aria-checked="' + !!prefs[k] + '" data-act="pref" data-k="' + k + '"><span>' + label + '</span><span class="sw-track" aria-hidden="true"><span class="sw-knob"></span></span></button>';
   }
   function parentHtml() {
-    var ls = S.lists, nx = nextId(), st = stickers(), t = todayStr(), shown = ls;
-    if (!S.pcAll && ls.length > 4) {
-      /* A window of 4 around now: last week's list, then the next ones. Show all if the chosen list falls outside it. */
-      var ni = -1; for (var i = 0; i < ls.length; i++) if (ls[i].id === nx) ni = i;
-      if (ni < 0) ni = ls.length;
-      var start = Math.max(0, Math.min(ni - 1, ls.length - 4));
-      shown = ls.slice(start, start + 4);
-      if (!shown.some(function (l) { return l.id === S.cur; })) shown = ls;
-    }
-    var rows = shown.map(function (l) {
-      var past = l.date && l.date < t;
-      return '<button type="button" class="pc-row' + (past ? " past" : "") + '" data-act="pick" data-id="' + esc(l.id) + '" aria-pressed="' + (l.id === S.cur) + '">' +
-        '<span class="pc-d">' + esc(fmtShort(l.date) || "No date") + '</span><span class="pc-t" lang="zh-CN">' + esc(titleOf(l)) + "</span>" +
-        (st[l.id] ? '<span class="pc-star" role="img" aria-label="Sticker earned">' + starFill(14) + "</span>" : "") +
-        (l.id === nx ? '<span class="nx-tag">Next</span>' : "") + "</button>";
-    }).join("");
-    var more = ls.length - shown.length;
-    var nt = Object.keys(trickyMap()).length, ns = Object.keys(st).length;
+    var nt = Object.keys(trickyMap()).length, ns = Object.keys(stickers()).length;
     return '<div class="pc-in"><span class="pc-grab" aria-hidden="true"></span>' +
-      '<div class="pc-head"><div><h2 id="pc-title">Parent corner</h2><p>Lists, settings and tips</p></div>' +
+      '<div class="pc-head"><div><h2 id="pc-title">Parent corner</h2><p>Settings and tips</p></div>' +
       '<button type="button" class="pc-x" data-act="pcclose" aria-label="Close parent corner">' + IC.close + "</button></div>" +
-      '<section class="pc-sec" aria-labelledby="pc-h-lists"><h3 id="pc-h-lists">Choose a list by test date</h3><div class="pc-lists">' + rows +
-      (more > 0 ? '<button type="button" class="pc-more" data-act="pcmore">Show ' + more + " more list" + (more === 1 ? "" : "s") + "</button>" : "") + "</div></section>" +
       '<section class="pc-sec" aria-labelledby="pc-h-cards"><h3 id="pc-h-cards">On the word cards</h3><div class="sw-grid">' +
       sw("py", "Pinyin") + sw("pics", "Pictures") + sw("en", "English") + sw("slow", "Slow voice") + "</div></section>" +
       '<section class="pc-sec" aria-labelledby="pc-h-screen"><h3 id="pc-h-screen">Screen</h3><div class="sw-grid">' + sw("dark", "Dark theme") + "</div></section>" +
@@ -421,7 +432,7 @@
   var pcOpener = null, pcDownOnBackdrop = false;
   function openParent(opener) {
     if (pc.open) return;
-    pcOpener = opener || null; S.pcAll = false; S.clearArm = false; S.resetArm = false; renderParent();
+    pcOpener = opener || null; S.clearArm = false; S.resetArm = false; renderParent();
     if (typeof pc.showModal === "function") pc.showModal(); else pc.setAttribute("open", "");
     var x = pc.querySelector(".pc-x"); if (x) x.focus();
   }
@@ -466,6 +477,7 @@
     else if (S.mode === "dict") v = dictView(L);
     else v = trickyView();
     root.innerHTML = appbar() + '<main class="main">' + (full ? "" : banner()) + v + "</main>";
+    placeWeekStrip();
     refocus(root, k);
     if (pc.open) renderParent();
     preloadPictures(L);
@@ -535,7 +547,11 @@
   }
   var lastPointer = "mouse";
   var ACT = {
-    pick: function (b) { stopSpeech(); S.cur = b.dataset.id; S.fi = 0; S.pi = 0; if (S.mode === "dict") D = newDict(); closeParent(); render(); },
+    pick: function (b) { if (b.dataset.id === S.cur) return; stopSpeech(); S.cur = b.dataset.id; S.fi = 0; S.pi = 0; if (S.mode === "dict") D = newDict(); render(); },
+    thisweek: function () {
+      stopSpeech(); S.cur = defaultId(); S.fi = 0; S.pi = 0; if (S.mode === "dict") D = newDict(); render();
+      var c = root.querySelector('.wk[aria-pressed="true"]'); if (c) c.focus({ preventScroll: true }); /* the pill itself is gone now */
+    },
     mode: function (b) { stopSpeech(); S.mode = b.dataset.m; S.focus = false; S.pic = false; S.clearArm = false; if (S.mode === "dict") D = newDict(); render(); },
     say: function (b) {
       var src = b.dataset.src, i = +b.dataset.i, w = wordFor(src, i); if (!w) return;
@@ -574,7 +590,6 @@
       else if (!pc.open) nudge(b);
     },
     pcclose: closeParent,
-    pcmore: function () { S.pcAll = true; renderParent(); var r = pc.querySelector('.pc-row[aria-pressed="true"]') || pc.querySelector(".pc-row"); if (r) r.focus(); },
     dstart: function () { var L = curList(); if (L) startDict(L.words, "list", L.id, false); },
     tstart: function () { var a = trickyArr(); if (a.length) startDict(a, "tricky", null, false); },
     again: function () { sayCurrent(); },
@@ -607,6 +622,15 @@
     if (pc.open || e.ctrlKey || e.metaKey || e.altKey || S.loading) return;
     var a = document.activeElement, act = a && a.dataset ? a.dataset.act : null, onBtn = !!(a && a.tagName === "BUTTON");
     var k = e.key, space = k === " " || k === "Spacebar";
+    /* ←/→ (and Home/End) move between the week chips; Enter or Space picks one. Checked first so focus mode's
+       arrows don't take over while a chip has focus. */
+    if (act === "pick" && (k === "ArrowLeft" || k === "ArrowRight" || k === "Home" || k === "End")) {
+      var chips = Array.prototype.slice.call(root.querySelectorAll(".weeks .wk")), ci = chips.indexOf(a);
+      e.preventDefault();
+      var to2 = k === "Home" ? 0 : k === "End" ? chips.length - 1 : Math.max(0, Math.min(chips.length - 1, ci + (k === "ArrowRight" ? 1 : -1)));
+      if (chips[to2]) chips[to2].focus();
+      return;
+    }
     if (S.mode === "learn" && S.pic) {
       if (k === "ArrowLeft") { e.preventDefault(); moveFocus(-1); }
       else if (k === "ArrowRight") { e.preventDefault(); moveFocus(1); }
@@ -673,6 +697,6 @@
   render();
   fetch("data/lists.json", { cache: "no-cache" })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(function (d) { S.lists = sortLists((d && d.lists) || []); S.cur = pickDefault(); S.loading = false; render(); })
+    .then(function (d) { S.lists = TXL.sortLists((d && d.lists) || []); S.cur = pickDefault(); S.loading = false; render(); })
     .catch(function () { S.loading = false; S.loadError = "The spelling lists couldn't be loaded. Check your connection and refresh the page."; render(); });
 })();

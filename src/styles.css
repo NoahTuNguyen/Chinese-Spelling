@@ -111,14 +111,25 @@ body.full .tabs{display:none}
 .when{background:var(--pencil);color:var(--on-pencil);padding:0 10px;border-radius:999px;font-size:13px;font-weight:700}
 .when.past{background:transparent;border:1.5px solid var(--line);color:var(--muted)}
 
-.stickers{grid-area:strip;margin-top:14px;background:var(--card);border-radius:18px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.stk-label{font-size:13px;font-weight:500;color:var(--muted);line-height:1.15;flex:none}
-.stk-label b{display:block;font-size:14px;font-weight:700;color:var(--ink)}
-.stk-row{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
-.stk{width:26px;height:26px;border-radius:50%;background:var(--off);display:grid;place-items:center;color:#FFFFFF}
-.stk.now{background:var(--card);border:2px dashed var(--grid)}
-.stk.got{background:var(--pencil)}
-.stk.perfect{box-shadow:0 0 0 3px var(--pencil-ring)}
+.title-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+.back-week{min-height:48px;padding:0 14px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--grid-ink);display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
+.back-week [lang]{font-size:15px;font-weight:800}
+
+/* Week strip: one chip per list (date, 听写 number, sticker). Scrolls sideways; full-bleed on phones. */
+.weeks{grid-area:strip;position:relative;margin:12px -20px 0;padding:12px 20px 8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none}
+.weeks::-webkit-scrollbar{display:none}
+.wk-row{display:flex;gap:8px;width:max-content}
+.wk{position:relative;flex:none;scroll-snap-align:center;min-width:66px;min-height:48px;padding:8px 10px;border-radius:16px;border:2px solid var(--row-line);
+  background:var(--card);color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:1px}
+.wk[aria-pressed="true"]{border-color:var(--grid);box-shadow:0 0 0 2px var(--grid);background:var(--row-on)}
+.wk.past{background:var(--row-past);color:var(--muted)}
+.wk.past .wk-stk{opacity:.7}
+.wk-date{font-size:13px;font-weight:700;line-height:1.15;white-space:nowrap}
+.wk-num{font-family:var(--kai);font-size:20px;line-height:1.2}
+.wk-stk{width:22px;height:22px;margin-top:3px;border-radius:50%;border:2px dashed var(--track-off);display:grid;place-items:center;color:#FFFFFF}
+.wk-stk.got{border:none;background:var(--pencil)}
+.wk-stk.perfect{box-shadow:0 0 0 3px var(--pencil-ring)}
+.wk-next{position:absolute;top:-10px;left:50%;translate:-50% 0;padding:0 8px;border-radius:999px;background:var(--pencil);color:var(--on-pencil);font-size:11px;font-weight:800;line-height:17px;white-space:nowrap}
 
 .howto{margin:16px 0 14px;font-size:15px;font-weight:600;color:var(--muted)}
 .howto-cn{font-family:var(--kai);font-size:20px;font-weight:500;color:var(--ink)}
@@ -130,10 +141,12 @@ body.full .tabs{display:none}
   .date{font-size:18px;gap:4px 10px}
   .d-short{display:none}.d-long{display:inline}
   .when{font-size:14px;padding:0 12px}
-  .stickers{margin:0;padding:10px 16px;gap:12px}
-  .stk-label{font-size:15px}
-  .stk-label b{display:inline;font-size:15px}
-  .stk{width:30px;height:30px}
+  .top-main{flex:1 1 auto}
+  .weeks{flex:0 0 100%;margin:4px 0 0;padding:12px 6px 10px;scrollbar-width:thin}
+  .weeks::-webkit-scrollbar{display:block;height:8px}
+  .wk{min-width:76px;padding:9px 12px}
+  .wk-date{font-size:14px}
+  .wk-num{font-size:22px}
   .howto{margin:22px 0 18px;font-size:16px}
   .howto-cn{font-size:22px}
 }
@@ -215,16 +228,6 @@ body.full .tabs{display:none}
 .pc-head p{margin:0;font-size:14px;font-weight:500;color:var(--muted)}
 .pc-x{flex:none;width:44px;height:44px;border-radius:50%;border:none;background:var(--paper);display:grid;place-items:center}
 .pc-sec h3{margin:0 0 8px;font-size:14px;font-weight:700;color:var(--muted)}
-.pc-lists{display:flex;flex-direction:column;gap:6px}
-.pc-row{display:flex;align-items:center;gap:12px;min-height:50px;padding:4px 14px;border-radius:14px;border:2px solid var(--row-line);background:var(--card);text-align:left}
-.pc-row.past{background:var(--row-past);color:var(--muted)}
-.pc-row[aria-pressed="true"]{border-color:var(--grid);background:var(--row-on);color:var(--ink)}
-.pc-row[aria-pressed="true"] .pc-d{font-weight:800}
-.pc-d{flex:none;min-width:84px;font-size:15px;font-weight:700;white-space:nowrap}
-.pc-t{flex:1;min-width:0;font-family:var(--kai);font-size:19px}
-.pc-star{flex:none;width:24px;height:24px;border-radius:50%;background:var(--pencil);color:#FFFFFF;display:grid;place-items:center}
-.nx-tag{flex:none;background:var(--pencil);color:var(--on-pencil);padding:0 10px;border-radius:999px;font-size:12px;font-weight:800}
-.pc-more{min-height:44px;border:none;background:none;font-size:14px;font-weight:700;color:var(--grid-ink)}
 .sw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .sw{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;padding:0 12px;border:none;border-radius:14px;background:var(--paper);font-size:15px;font-weight:700;text-align:left}
 .sw-track{flex:none;position:relative;width:40px;height:24px;border-radius:999px;background:var(--track-off);transition:background-color .15s ease}
@@ -389,6 +392,8 @@ body.full .main{max-width:none;padding:0}
 .f-h{margin:0;font-family:var(--kai);font-weight:500;font-size:30px}
 .f-date{margin:2px 0 0;font-size:15px;font-weight:600;color:var(--muted)}
 .f-pc{grid-area:pc}
+.f-back{margin-top:6px}
+.focus .weeks{margin:0 -16px;padding:12px 16px 6px}
 .f-stage{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"card card" "prev next";align-items:center;align-content:center;gap:16px;touch-action:pan-y}
 .f-nav{width:64px;height:64px;border-radius:50%;border:none;display:grid;place-items:center;box-shadow:0 4px 0 var(--lift)}
 .f-nav.prev{grid-area:prev;justify-self:start;background:var(--card);color:var(--ink)}
@@ -427,6 +432,8 @@ body.full .main{max-width:none;padding:0}
   .f-all{justify-self:start;min-height:52px}
   .f-pc{justify-self:end}
   .f-pc .pc-btn.pill{min-height:52px;border:none}
+  .focus .weeks{margin:0;padding:12px 6px 6px}
+  .focus .wk-row{margin:0 auto}
   .f-h{font-size:34px}
   .f-stage{grid-template-columns:auto minmax(0,640px) auto;grid-template-areas:"prev card next";justify-content:center;gap:40px}
   .f-nav{width:84px;height:84px}
