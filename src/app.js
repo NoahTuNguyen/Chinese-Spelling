@@ -197,7 +197,7 @@
   }
   var BARS = '<span class="bars" aria-hidden="true"><span></span><span></span><span></span></span>';
   function card(w, i, src, extra) {
-    return '<button type="button" class="word t' + (i % 5) + '" data-act="say" data-src="' + src + '" data-i="' + i + '" data-hl="' + src + "-" + i + '" aria-label="Hear ' + esc(w.hanzi) + '">' +
+    return '<button type="button" class="word t' + (i % 5) + (prefs.pics && w.pic ? " has-pic" : "") + '" data-act="say" data-src="' + src + '" data-i="' + i + '" data-hl="' + src + "-" + i + '" aria-label="Hear ' + esc(w.hanzi) + '">' +
       (prefs.pics && w.pic ? '<span class="pic" aria-hidden="true">' + esc(w.pic) + "</span>" : "") + BARS + boxes(w.hanzi) +
       (prefs.py && w.pinyin ? '<span class="py">' + esc(w.pinyin) + "</span>" : "") +
       (prefs.en && w.english ? '<span class="en">' + esc(w.english) + "</span>" : "") + (extra || "") + "</button>";
@@ -331,6 +331,16 @@
   }
 
   /* ---------- Parent corner ---------- */
+  /* Add to Home Screen tip: phones and tablets only, and not once it's already running from the Home Screen. */
+  function homeTip() {
+    var standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+    var ua = navigator.userAgent || "", ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), android = /Android/.test(ua);
+    if (standalone || (!ios && !android)) return "";
+    var share = ic(18, '<path d="M12 3v12M7.5 7.5L12 3l4.5 4.5"/><path d="M6 11H5v10h14V11h-1"/>', line(2));
+    return '<div class="pc-tip home"><b>Add to Home Screen</b><p>' +
+      (ios ? "Safari can clear stickers from sites you haven't opened for a week. Add this page to your Home Screen so they stay: in Safari, tap Share <span class=\"share-ic\">" + share + "</span> then <b>Add to Home Screen</b>."
+        : "Add this page to your Home Screen so it opens like an app and keeps stickers safe: open the browser menu ⋮ and tap <b>Add to Home screen</b> (or <b>Install app</b>).") + "</p></div>";
+  }
   function sw(k, label) {
     return '<button type="button" class="sw" role="switch" aria-checked="' + !!prefs[k] + '" data-act="pref" data-k="' + k + '"><span>' + label + '</span><span class="sw-track" aria-hidden="true"><span class="sw-knob"></span></span></button>';
   }
@@ -361,7 +371,7 @@
       '<section class="pc-sec" aria-labelledby="pc-h-cards"><h3 id="pc-h-cards">On the word cards</h3><div class="sw-grid">' +
       sw("py", "Pinyin") + sw("pics", "Pictures") + sw("en", "English") + sw("slow", "Slow voice") + "</div></section>" +
       '<section class="pc-sec" aria-labelledby="pc-h-screen"><h3 id="pc-h-screen">Screen</h3><div class="sw-grid">' + sw("dark", "Dark theme") + "</div></section>" +
-      '<div class="pc-tip"><b>How it works</b><p>Learn: tap a word to hear it. Dictation: each word plays twice; she writes on paper, then checks with the faces. Missed words go to Tricky.</p></div>' +
+      '<div class="pc-tip"><b>How it works</b><p>Learn: tap a word to hear it. Dictation: each word plays twice; she writes on paper, then checks with the faces. Missed words go to Tricky.</p></div>' + homeTip() +
       '<div class="pc-danger"><button type="button" class="pc-clear" data-act="tclear"' + (nt ? "" : " disabled") + ">" +
       (!nt ? "No tricky words on this device" : S.clearArm ? "Tap again to clear " + nt + " tricky word" + (nt === 1 ? "" : "s") : "Clear tricky words on this device") + "</button>" +
       (ns ? '<button type="button" class="pc-clear" data-act="sreset">' + (S.resetArm ? "Tap again to remove " + ns + " sticker" + (ns === 1 ? "" : "s") : "Reset stickers") + "</button>" : "") + "</div></div>";

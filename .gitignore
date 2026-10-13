@@ -9,3 +9,5 @@ photos/
 *.jpeg
 *.heic
 *.png
+# App icons are generated artwork, not photos.
+!src/icons/*.png
