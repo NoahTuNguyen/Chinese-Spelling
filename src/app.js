@@ -870,6 +870,12 @@
   document.addEventListener("pointercancel", holdEnd, true);
   document.addEventListener("contextmenu", function (e) { if (e.target.closest && e.target.closest(".pc-btn")) e.preventDefault(); });
 
+  /* TEMPORARY: network-first service worker so a deploy shows up straight away despite GitHub Pages'
+     10-minute cache (see sw.js and CLAUDE.md). updateViaCache "none": sw.js itself is never served from cache. */
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(function () {}); });
+  }
+
   /* ---------- load data ---------- */
   render();
   fetch("data/lists.json", { cache: "no-cache" })

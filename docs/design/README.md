@@ -205,7 +205,9 @@ it (optional string). Mockups show hand-drawn SVG pictures; the app uses the emo
 `scope: "./"` (site lives under `/Chinese-Spelling/` on GitHub Pages), `display: standalone`,
 theme `#EEF6F1`, icons 192/512 PNG + a 180 px `apple-touch-icon` (a green 田字格 square
 with 听 in it). Add `apple-mobile-web-app-capable` meta and a status-bar style.
-A service worker for offline use is optional and comes last.
+A service worker for offline use is optional and comes last. For now a temporary
+network-first worker (`src/sw.js`) is in place so updates show up despite GitHub Pages'
+10-minute cache; it keeps the last good copy of each file for offline use (see CLAUDE.md).
 
 ## Non-negotiables
 - No framework, no build step. Relative paths only (GitHub Pages subpath).

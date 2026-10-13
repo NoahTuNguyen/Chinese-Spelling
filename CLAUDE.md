@@ -51,8 +51,23 @@ On this Windows machine `python3` is only the Store stub; use `py -3` instead.
   `manhtu.dev` is verified on the NoahTuNguyen account (TXT `_github-pages-challenge-NoahTuNguyen`).
 - Workflow `.github/workflows/deploy.yml`: on push to `main` (or manual run) it
   validates `lists.json`, uploads `src/` and deploys. A failed validation blocks the deploy.
-- Pages caches files for ~10 min, so app.js/styles.css changes can take a few
-  minutes to reach phones; lists.json is fetched with `no-cache`.
+- Pages sends every file with `Cache-Control: max-age=600` (can't be changed). To get around it,
+  a TEMPORARY network-first service worker is in place (see below), so after a device's first
+  visit each open fetches the newest files. lists.json is also fetched with `no-cache`.
+
+### Service worker (temporary)
+- `src/sw.js`, registered at the end of `app.js` with `updateViaCache: "none"`. Same-site GETs
+  go to the network with `cache: "no-store"`; the last good copy (cache `tx-offline-v1`) is used
+  only when offline, so pictures and the app still open without a connection. Cross-site
+  requests (Google Fonts) are not touched.
+- A device that last visited before the worker existed still gets one more cached load (up to
+  10 min) before the worker installs. An open page keeps its old code until it is reloaded.
+- To remove it later, in two deploys:
+  1. Replace `src/sw.js` with a worker that unregisters itself and clears its cache:
+     `self.addEventListener("install", () => self.skipWaiting());`
+     `self.addEventListener("activate", e => e.waitUntil(caches.delete("tx-offline-v1").then(() => self.registration.unregister())));`
+     Keep the registration in app.js so devices fetch this version. Push and leave it a few weeks.
+  2. Delete `src/sw.js` and the registration block in `app.js`; push.
 - Status: `gh run list --workflow deploy.yml` and `gh run watch <run-id>`
   (or the repo's Actions tab).
 - Re-run: `gh workflow run deploy.yml` deploys the current `main`;
@@ -103,7 +118,7 @@ On this Windows machine `python3` is only the Store stub; use `py -3` instead.
   a chat) is in `docs/design/picture-pack.md`.
 - One Gemini message per word: `Image: <scene description>. One picture only, no text.`
 - Only the current list's pictures are preloaded; all other `<img>` use `loading="lazy"`.
-  There is no service worker (if one is added, cache `src/img/` too).
+  The temporary service worker keeps the last good copy of each picture for offline use.
 
 ## Adding lists from a photo of the spelling sheet
 When the user gives photos of a 听写 sheet:
@@ -186,6 +201,7 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   the printed pinyin so polyphones like 地 are always right), saved as mp3 per word
   under `src/audio/` and played instead of browser speech when present.
 - Stroke-order animation per character.
-- Service worker for offline use (the manifest and icons are in place already).
+- A proper offline-first service worker (precache the current list) to replace the temporary
+  network-first one.
 - Self-hosted LXGW WenKai subset so Android shows a Kai font too.
 - Support for several classes or levels (one lists file per class).
