@@ -24,6 +24,7 @@ open a shared link, tap a word to hear it in Mandarin, and run a mock dictation.
 - `src/app.js` — the whole app (render functions + delegated `data-act` click handlers)
 - `src/styles.css` — design tokens on `:root` (light; dark under `[data-theme="dark"]`), 田字格 boxes, components
 - `src/data/lists.json` — ALL spelling-list data
+- `src/data/lookalikes.json` — character → 2–4 look-alike characters (first = most common mix-up), for 缺字
 - `src/img/` — one 640×480 WebP illustration per word, named by toneless pinyin (`caihong.webp`)
 - `src/manifest.webmanifest`, `src/icons/` — Add to Home Screen (icons 192, 512 incl. maskable,
   180 apple-touch-icon). `*.png` is gitignored except `src/icons/*.png`.
@@ -129,6 +130,12 @@ When the user gives photos of a 听写 sheet:
 3. Write a short, simple English meaning a 7-year-old understands (1–4 words).
 4. Pick a `pic` emoji for each word (see Data format); leave it out if nothing fits.
 5. Draft `explain`, `sentence` and `sentencePinyin` for each word (see Data format).
+   Add `src/data/lookalikes.json` entries for any NEW characters: 3 look-alikes each, the first
+   being the most common real-life confusion for children (similar shape or same sound),
+   preferring characters a Primary 1–2 child knows, and never one that forms a real word with
+   the rest of the word (e.g. not 雪 for 雨 in 下雨, because 下雪 is a word). The validator
+   requires an entry for every character and rejects swaps that spell another list word.
+   Show the new entries in a table for review before committing.
 6. Write one Gemini image line per word for the user to generate
    (`Image: <scene description>. One picture only, no text.`), naming the file each one
    becomes (`src/img/<toneless-pinyin>.webp`) and avoiding look-alikes within the list.
@@ -180,6 +187,11 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   Audio tones (no files), off via the Sounds switch.
   - 看图选词 Picture quiz: words with an `img`; Hint = pinyin under the choices; needs ≥ 3 pictures.
   - 听音选字 Listen & pick: every word; spoken on show, 🔊 Hear again; Hint = the picture/emoji.
+  - 缺字 Missing character: the word in 田字格 with one dashed gap (random position), whole word
+    spoken on show and after the right character drops in; Hint = that character's pinyin.
+    Wrong choices (`missingChoices`): always the FIRST look-alike from `data/lookalikes.json`,
+    one more at random, never one that spells another list word; fallback = characters from
+    the list's other words.
 - Parent corner: `<dialog>`; press-and-hold 1.5 s on touch, click/keyboard elsewhere.
   Holds the Pinyin/Pictures/English/Slow voice + Sounds/Dark theme switches, how it
   works, Add to Home Screen tip (phones/tablets), clear tricky words, reset stickers.
