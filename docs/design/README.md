@@ -72,24 +72,31 @@ yellow buttons have a 4–5 px solid bottom shadow (`--pencil-shadow`) for a tac
   label, active tab has a mint pill behind the icon. Tricky shows an orange count badge.
   Fixed to the bottom with safe-area padding.
 - **Header tabs** (≥ 768 px): the same three tabs as a segmented pill in the top bar.
-- **Week strip** (replaces the sticker strip and the Parent corner list picker): under the
-  list title, one chip per list in date order. Each chip is a real button (≥ 48 px tall,
-  `aria-pressed`, `aria-label` like "听写十五, Tuesday 20 October, sticker earned") showing
-  the short date ("20 Oct"), the 听写 number (十五) in Kai, and the sticker state: gold circle
-  with a white star = earned, plus a `--pencil-ring` ring = perfect, dashed empty circle = not yet.
-  Selected chip: `--grid` ring and mint fill. Next upcoming list: small yellow "Next" tag on
-  the chip's top edge. Past lists slightly dimmed (`--row-past`, muted text).
-  Phones: full-bleed row that scrolls sideways, auto-scrolled so the selected chip is in view.
-  iPad/desktop: as many chips as fit, scrolling for the rest (thin scrollbar on desktop).
-  Keyboard: Tab reaches each chip; ←/→, Home and End move between chips; Enter/Space picks.
+- **Title picker** (replaces the sticker strip and the Parent corner list picker): the list
+  title is a button inside the page `<h1>`: 听写（十五） in Kai with a small ▾ in a white
+  circle, and the date line under it ("Tue 20 Oct · in 7 days"). `aria-label` like
+  "听写十五, Tuesday 20 October. Change week"; `aria-haspopup="dialog"`. Opens the week sheet.
+- **Sticker count pill**: beside the title, gold sticker circle + number earned (e.g. "3"),
+  ≥ 48 px tall; opens the same week sheet (`aria-label` "3 stickers. Choose a week").
+- **Week sheet**: bottom sheet on phones, centred dialog on iPad/desktop (same component as
+  the Parent corner). Title 选一周 Choose a week, close button, how-to line
+  点一周来练习 · Tap a week to practise it. One row per list in date order, each a button
+  ≥ 56 px tall: short date, 听写（N）, Next tag (yellow) on the next upcoming list, and the
+  sticker state (gold circle with white star = earned, plus a `--pencil-ring` ring = perfect,
+  dashed empty circle = not yet). Selected row: `--grid` ring and mint fill. Past lists
+  slightly dimmed (`--row-past`, muted text). Opens scrolled to the selected row with focus on
+  it. Picking a row selects that list, closes the sheet and stays on the same tab (Dictation
+  goes back to its start screen). Real dialog: focus trap, Esc and ✕ close, focus returns to
+  the title.
 - **Back to this week**: small pill 回到本周 Back to this week next to the title, shown only
   when the selected list isn't the default list (see Default list); it jumps back to it.
 - **Parent button**: gear, 48 px circle, caption "Parents: hold".
 
 ## Screens and behaviour
 **1 Learn.** Header: 本周 This week pill (only when showing the next upcoming list),
-title 听写（N） (+ Back to this week pill when another list is chosen), date + "in N days"
-pill. Week strip. Grid of word cards + Play all tile
+title picker 听写（N） ▾ with its date line, sticker count pill (+ Back to this week pill when
+another list is chosen). No separate sticker strip, so the word cards sit right under the
+header. Grid of word cards + Play all tile
 (2 columns phone, auto-fill `minmax(176px,1fr)` wider). A "One by one" button opens focus mode.
 Tap a card: speak it. Play all: speak each in turn, highlighting the playing card.
 
@@ -113,7 +120,7 @@ reduced-motion safe). Copy stays positive even at 0 correct ("Good try!").
 
 **5 Parent corner.** Bottom sheet over a dimmed page (centered dialog on desktop).
 Opens by press-and-hold on the gear for ~1.5 s with a filling ring on touch devices
-(`pointer: coarse`); a normal click on desktop. Lists are chosen on the week strip, not here.
+(`pointer: coarse`); a normal click on desktop. Lists are chosen from the title picker, not here.
 Contents:
 - On the word cards: switches Pinyin (on), Pictures (on), English (off), Slow voice (off).
 - How it works (short paragraph) + on iPhone/iPad: "Add to Home Screen so stickers
@@ -124,12 +131,12 @@ Contents:
 **6 Focus mode.** One word at a time: picture, huge 田字格, pinyin, yellow 听一听 Listen.
 Big prev/next circle buttons (next is dark), swipe on touch, ←/→ keys. Progress dots
 (current is a wide green pill). Bottom-right 开始听写 Dictation shortcut. 全部 All words returns
-to the grid. Default view on iPad is still the grid; focus is one tap away. The week strip
-sits under the top bar (picking a list starts at its first word).
+to the grid. Default view on iPad is still the grid; focus is one tap away. The title picker
+sits in the top bar (picking a week starts at its first word).
 
-The week strip is shown on Learn (grid and focus mode), on the Dictation start screen, on
-desktop and iPad; it is hidden while a dictation runs (dictation, check, well done) and on the
-picture card.
+The title picker (with sticker pill and Back to this week) is shown on Learn (grid and focus
+mode), the Dictation start screen and Tricky, at every size; it is hidden while a dictation
+runs (dictation, check, well done) and on the picture card.
 
 ## Default list
 One function, `pickDefaultList(lists, now)` in `src/lists-logic.js`, with

@@ -143,10 +143,13 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
 - Picture card (`S.pic`, from `ⓘ more` or focus mode's 看图 More): big picture, word, pinyin,
   Listen, English explanation, example sentence + pinyin with its own play button;
   prev/next, swipe, ←/→, Esc or ✕ closes back to where it was opened.
-- Week strip (`.weeks`): one chip per list (date, 听写 number, sticker state; Next tag; past
-  dimmed) under the title on Learn, focus mode and the Dictation start screen. It is the only
-  way to choose a list. "回到本周 Back to this week" shows when the chosen list isn't the default.
-- Screens: Learn (week strip, word cards, Play all tile, One by one → focus mode),
+- Title picker: the list title (`.title-btn` inside the `<h1>`, 听写（N） ▾ + date line) and the
+  sticker count pill (`.stk-pill`) open the week sheet `<dialog id="weeks">` ("选一周 Choose a
+  week": one row per list with date, 听写（N）, Next tag, sticker state; past dimmed). It is the
+  only way to choose a list; picking stays on the same tab. Shown on Learn, focus mode, the
+  Dictation start screen and Tricky; hidden while a dictation runs and on the picture card.
+  "回到本周 Back to this week" shows when the chosen list isn't the default.
+- Screens: Learn (title picker, word cards, Play all tile, One by one → focus mode),
   Dictation (Hear again, empty 田字格, Next), Check your paper (two faces per word; Done
   once all are marked), Well done (stars scaled to 5, sticker + sticker book), Tricky.
 - Parent corner: `<dialog>`; press-and-hold 1.5 s on touch, click/keyboard elsewhere.
