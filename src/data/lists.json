@@ -9,31 +9,51 @@
           "hanzi": "空气",
           "pinyin": "kōng qì",
           "english": "air",
-          "pic": "🎈"
+          "pic": "🎈",
+          "img": "img/kongqi.webp",
+          "explain": "Air is all around us. We can't see it, but we breathe it all the time.",
+          "sentence": "公园里的空气很新鲜。",
+          "sentencePinyin": "gōng yuán lǐ de kōng qì hěn xīn xiān."
         },
         {
           "hanzi": "岩石",
           "pinyin": "yán shí",
           "english": "rock",
-          "pic": "🪨"
+          "pic": "🪨",
+          "img": "img/yanshi.webp",
+          "explain": "Rocks are big, hard pieces of stone on hills and beaches.",
+          "sentence": "海边有很多大岩石。",
+          "sentencePinyin": "hǎi biān yǒu hěn duō dà yán shí."
         },
         {
           "hanzi": "树林",
           "pinyin": "shù lín",
           "english": "woods",
-          "pic": "🌲"
+          "pic": "🌲",
+          "img": "img/shulin.webp",
+          "explain": "Woods are places where lots of trees grow close together.",
+          "sentence": "小鸟在树林里唱歌。",
+          "sentencePinyin": "xiǎo niǎo zài shù lín lǐ chàng gē."
         },
         {
           "hanzi": "草地",
           "pinyin": "cǎo dì",
           "english": "grass, lawn",
-          "pic": "🌿"
+          "pic": "🌿",
+          "img": "img/caodi.webp",
+          "explain": "A lawn is a big patch of soft green grass.",
+          "sentence": "小朋友在草地上踢球。",
+          "sentencePinyin": "xiǎo péng you zài cǎo dì shàng tī qiú."
         },
         {
           "hanzi": "花园",
           "pinyin": "huā yuán",
           "english": "garden",
-          "pic": "🌷"
+          "pic": "🌷",
+          "img": "img/huayuan.webp",
+          "explain": "A garden is a place where people grow pretty flowers and plants.",
+          "sentence": "花园里开满了美丽的花。",
+          "sentencePinyin": "huā yuán lǐ kāi mǎn le měi lì de huā."
         }
       ]
     },
@@ -46,31 +66,51 @@
           "hanzi": "星星",
           "pinyin": "xīng xing",
           "english": "stars",
-          "pic": "⭐"
+          "pic": "⭐",
+          "img": "img/xingxing.webp",
+          "explain": "Stars are the tiny lights that twinkle in the night sky.",
+          "sentence": "天上的星星一闪一闪的。",
+          "sentencePinyin": "tiān shàng de xīng xing yì shǎn yì shǎn de."
         },
         {
           "hanzi": "月亮",
           "pinyin": "yuè liàng",
           "english": "moon",
-          "pic": "🌙"
+          "pic": "🌙",
+          "img": "img/yueliang.webp",
+          "explain": "The moon shines in the sky at night. Sometimes it is round, sometimes it is thin.",
+          "sentence": "今天晚上的月亮又大又圆。",
+          "sentencePinyin": "jīn tiān wǎn shang de yuè liàng yòu dà yòu yuán."
         },
         {
           "hanzi": "彩虹",
           "pinyin": "cǎi hóng",
           "english": "rainbow",
-          "pic": "🌈"
+          "pic": "🌈",
+          "img": "img/caihong.webp",
+          "explain": "A rainbow is the colourful arch you see in the sky after rain.",
+          "sentence": "雨后，天上有一道彩虹。",
+          "sentencePinyin": "yǔ hòu, tiān shàng yǒu yí dào cǎi hóng."
         },
         {
           "hanzi": "太阳",
           "pinyin": "tài yáng",
           "english": "sun",
-          "pic": "☀️"
+          "pic": "☀️",
+          "img": "img/taiyang.webp",
+          "explain": "The sun is a big, hot star that gives us light and keeps us warm.",
+          "sentence": "太阳出来了，天气很暖和。",
+          "sentencePinyin": "tài yáng chū lái le, tiān qì hěn nuǎn huo."
         },
         {
           "hanzi": "下雨",
           "pinyin": "xià yǔ",
           "english": "raining",
-          "pic": "🌧️"
+          "pic": "🌧️",
+          "img": "img/xiayu.webp",
+          "explain": "When it rains, little drops of water fall from the clouds.",
+          "sentence": "下雨了，我们要带雨伞。",
+          "sentencePinyin": "xià yǔ le, wǒ men yào dài yǔ sǎn."
         }
       ]
     },
@@ -83,31 +123,51 @@
           "hanzi": "郊外",
           "pinyin": "jiāo wài",
           "english": "countryside",
-          "pic": "🏞️"
+          "pic": "🏞️",
+          "img": "img/jiaowai.webp",
+          "explain": "The countryside is the open land outside the city, with fields and trees.",
+          "sentence": "周末，我们去郊外玩。",
+          "sentencePinyin": "zhōu mò, wǒ men qù jiāo wài wán."
         },
         {
           "hanzi": "乌云",
           "pinyin": "wū yún",
           "english": "dark clouds",
-          "pic": "☁️"
+          "pic": "☁️",
+          "img": "img/wuyun.webp",
+          "explain": "Dark clouds are big grey clouds. They often bring rain.",
+          "sentence": "天上有很多乌云，快要下雨了。",
+          "sentencePinyin": "tiān shàng yǒu hěn duō wū yún, kuài yào xià yǔ le."
         },
         {
           "hanzi": "打伞",
           "pinyin": "dǎ sǎn",
           "english": "open an umbrella",
-          "pic": "☂️"
+          "pic": "☂️",
+          "img": "img/dasan.webp",
+          "explain": "We open an umbrella to stay dry when it rains.",
+          "sentence": "下雨了，妈妈给我打伞。",
+          "sentencePinyin": "xià yǔ le, mā ma gěi wǒ dǎ sǎn."
         },
         {
           "hanzi": "刮风",
           "pinyin": "guā fēng",
           "english": "windy",
-          "pic": "🌬️"
+          "pic": "🌬️",
+          "img": "img/guafeng.webp",
+          "explain": "When it is windy, the air moves fast and the trees sway.",
+          "sentence": "外面在刮风，树叶都在跳舞。",
+          "sentencePinyin": "wài miàn zài guā fēng, shù yè dōu zài tiào wǔ."
         },
         {
           "hanzi": "闪电",
           "pinyin": "shǎn diàn",
           "english": "lightning",
-          "pic": "⚡"
+          "pic": "⚡",
+          "img": "img/shandian.webp",
+          "explain": "Lightning is a bright flash of light in the sky during a storm.",
+          "sentence": "天空中有一道闪电。",
+          "sentencePinyin": "tiān kōng zhōng yǒu yí dào shǎn diàn."
         }
       ]
     },
@@ -120,31 +180,51 @@
           "hanzi": "晴朗",
           "pinyin": "qíng lǎng",
           "english": "sunny, clear",
-          "pic": "🌞"
+          "pic": "🌞",
+          "img": "img/qinglang.webp",
+          "explain": "When it is sunny and clear, the sky is blue and there is no rain.",
+          "sentence": "今天天气晴朗，我们去公园玩。",
+          "sentencePinyin": "jīn tiān tiān qì qíng lǎng, wǒ men qù gōng yuán wán."
         },
         {
           "hanzi": "寒冷",
           "pinyin": "hán lěng",
           "english": "cold",
-          "pic": "❄️"
+          "pic": "❄️",
+          "img": "img/hanleng.webp",
+          "explain": "Cold weather makes us shiver, so we wear warm clothes.",
+          "sentence": "冬天很寒冷，我要穿上厚衣服。",
+          "sentencePinyin": "dōng tiān hěn hán lěng, wǒ yào chuān shàng hòu yī fu."
         },
         {
           "hanzi": "炎热",
           "pinyin": "yán rè",
           "english": "very hot",
-          "pic": "🥵"
+          "pic": "🥵",
+          "img": "img/yanre.webp",
+          "explain": "Very hot weather makes us sweat and want a cold drink.",
+          "sentence": "天气炎热，我喝了很多水。",
+          "sentencePinyin": "tiān qì yán rè, wǒ hē le hěn duō shuǐ."
         },
         {
           "hanzi": "日历",
           "pinyin": "rì lì",
           "english": "calendar",
-          "pic": "📅"
+          "pic": "📅",
+          "img": "img/rili.webp",
+          "explain": "A calendar shows the days, weeks and months of the year.",
+          "sentence": "我在日历上找到了我的生日。",
+          "sentencePinyin": "wǒ zài rì lì shàng zhǎo dào le wǒ de shēng rì."
         },
         {
           "hanzi": "时间",
           "pinyin": "shí jiān",
           "english": "time",
-          "pic": "⏰"
+          "pic": "⏰",
+          "img": "img/shijian.webp",
+          "explain": "Time tells us when things happen. A clock shows us the time.",
+          "sentence": "时间到了，我们去上学吧。",
+          "sentencePinyin": "shí jiān dào le, wǒ men qù shàng xué ba."
         }
       ]
     },
@@ -157,31 +237,51 @@
           "hanzi": "月球",
           "pinyin": "yuè qiú",
           "english": "the moon",
-          "pic": "🌕"
+          "pic": "🌕",
+          "img": "img/yueqiu.webp",
+          "explain": "The moon is a big ball of rock that goes around the Earth.",
+          "sentence": "我们可以从地球上看到月球。",
+          "sentencePinyin": "wǒ men kě yǐ cóng dì qiú shàng kàn dào yuè qiú."
         },
         {
           "hanzi": "地球",
           "pinyin": "dì qiú",
           "english": "Earth",
-          "pic": "🌏"
+          "pic": "🌏",
+          "img": "img/diqiu.webp",
+          "explain": "Earth is the planet we live on. It is round like a ball.",
+          "sentence": "我们住在地球上。",
+          "sentencePinyin": "wǒ men zhù zài dì qiú shàng."
         },
         {
           "hanzi": "彗星",
           "pinyin": "huì xīng",
           "english": "comet",
-          "pic": "☄️"
+          "pic": "☄️",
+          "img": "img/huixing.webp",
+          "explain": "A comet is an icy ball in space with a long, shiny tail.",
+          "sentence": "彗星有一条长长的尾巴。",
+          "sentencePinyin": "huì xīng yǒu yì tiáo cháng cháng de wěi ba."
         },
         {
           "hanzi": "海王星",
           "pinyin": "hǎi wáng xīng",
           "english": "Neptune",
-          "pic": "🪐"
+          "pic": "🪐",
+          "img": "img/haiwangxing.webp",
+          "explain": "Neptune is a blue planet very, very far away from the sun.",
+          "sentence": "海王星是一颗蓝色的星球。",
+          "sentencePinyin": "hǎi wáng xīng shì yì kē lán sè de xīng qiú."
         },
         {
           "hanzi": "天王星",
           "pinyin": "tiān wáng xīng",
           "english": "Uranus",
-          "pic": "🪐"
+          "pic": "🪐",
+          "img": "img/tianwangxing.webp",
+          "explain": "Uranus is a cold, blue-green planet that spins on its side.",
+          "sentence": "天王星离我们很远很远。",
+          "sentencePinyin": "tiān wáng xīng lí wǒ men hěn yuǎn hěn yuǎn."
         }
       ]
     },
@@ -194,31 +294,51 @@
           "hanzi": "环保",
           "pinyin": "huán bǎo",
           "english": "protect the environment",
-          "pic": "♻️"
+          "pic": "♻️",
+          "img": "img/huanbao.webp",
+          "explain": "Protecting the environment means keeping our Earth clean and green.",
+          "sentence": "我们要环保，不乱扔垃圾。",
+          "sentencePinyin": "wǒ men yào huán bǎo, bú luàn rēng lā jī."
         },
         {
           "hanzi": "宇宙",
           "pinyin": "yǔ zhòu",
           "english": "universe",
-          "pic": "🌌"
+          "pic": "🌌",
+          "img": "img/yuzhou.webp",
+          "explain": "The universe is everything in space: the stars, the planets and more.",
+          "sentence": "宇宙里有很多很多星星。",
+          "sentencePinyin": "yǔ zhòu lǐ yǒu hěn duō hěn duō xīng xing."
         },
         {
           "hanzi": "用水",
           "pinyin": "yòng shuǐ",
           "english": "use water",
-          "pic": "💧"
+          "pic": "💧",
+          "img": "img/yongshui.webp",
+          "explain": "We use water to drink, wash and cook. We should not waste it.",
+          "sentence": "我们用水要节约。",
+          "sentencePinyin": "wǒ men yòng shuǐ yào jié yuē."
         },
         {
           "hanzi": "环境",
           "pinyin": "huán jìng",
           "english": "environment",
-          "pic": "🌍"
+          "pic": "🌍",
+          "img": "img/huanjing.webp",
+          "explain": "The environment is the world around us: the air, water, land and living things.",
+          "sentence": "我们要保护美丽的环境。",
+          "sentencePinyin": "wǒ men yào bǎo hù měi lì de huán jìng."
         },
         {
           "hanzi": "垃圾",
           "pinyin": "lā jī",
           "english": "rubbish",
-          "pic": "🗑️"
+          "pic": "🗑️",
+          "img": "img/laji.webp",
+          "explain": "Rubbish is the things we throw away. It goes in the bin.",
+          "sentence": "请把垃圾扔进垃圾桶。",
+          "sentencePinyin": "qǐng bǎ lā jī rēng jìn lā jī tǒng."
         }
       ]
     },
@@ -231,31 +351,50 @@
           "hanzi": "夜空",
           "pinyin": "yè kōng",
           "english": "night sky",
-          "pic": "🌃"
+          "pic": "🌃",
+          "explain": "The night sky is the dark sky we see at night, full of stars.",
+          "sentence": "夜空中有很多星星。",
+          "sentencePinyin": "yè kōng zhōng yǒu hěn duō xīng xing."
         },
         {
           "hanzi": "神话",
           "pinyin": "shén huà",
           "english": "myth",
-          "pic": "🐉"
+          "pic": "🐉",
+          "img": "img/shenhua.webp",
+          "explain": "A myth is a very old story about gods, heroes or magic.",
+          "sentence": "爷爷给我讲了一个神话故事。",
+          "sentencePinyin": "yé ye gěi wǒ jiǎng le yí gè shén huà gù shi."
         },
         {
           "hanzi": "航天",
           "pinyin": "háng tiān",
           "english": "space travel",
-          "pic": "🚀"
+          "pic": "🚀",
+          "img": "img/hangtian.webp",
+          "explain": "Space travel means flying a rocket up into space.",
+          "sentence": "我长大了想当航天员。",
+          "sentencePinyin": "wǒ zhǎng dà le xiǎng dāng háng tiān yuán."
         },
         {
           "hanzi": "外星人",
           "pinyin": "wài xīng rén",
           "english": "alien",
-          "pic": "👽"
+          "pic": "👽",
+          "img": "img/waixingren.webp",
+          "explain": "An alien is a make-believe creature from another planet.",
+          "sentence": "我画了一个可爱的外星人。",
+          "sentencePinyin": "wǒ huà le yí gè kě ài de wài xīng rén."
         },
         {
           "hanzi": "望远镜",
           "pinyin": "wàng yuǎn jìng",
           "english": "telescope",
-          "pic": "🔭"
+          "pic": "🔭",
+          "img": "img/wangyuanjing.webp",
+          "explain": "A telescope makes things that are far away look big and close.",
+          "sentence": "我用望远镜看星星。",
+          "sentencePinyin": "wǒ yòng wàng yuǎn jìng kàn xīng xing."
         }
       ]
     }
