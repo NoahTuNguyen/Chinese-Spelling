@@ -475,7 +475,18 @@
       },
       onShow: function (q) { sayWordSoon(q.w, 400); },
       onRight: function (q) { sayWordSoon(q.w, 650); }, /* after the character drops into its box */
-      nextAfter: 2200 }
+      nextAfter: 2200 },
+    { id: "memory", cn: "翻翻乐", en: "Memory match", sub: "Flip two cards to find a pair", kind: "memory",
+      how: ["翻一翻，配一配", "Flip two cards to find a pair"],
+      items: function (L) { return L ? L.words.filter(function (w) { return w.img || w.pic; }) : []; }, min: 2,
+      notEnough: "This week needs more pictures to play", ready: function (n) { return Math.min(n, 6) + " pairs to find"; },
+      bestText: function (sc, thisWeek) { return (thisWeek ? "Best this week: " : "Best for this list: ") + sc.best + " moves"; },
+      art: function () { return '<span class="gc-cards"><span class="mm-mini back">?</span><span class="mm-mini face">翻</span></span>'; },
+      build: function (L) {
+        var words = shuffle(this.items(L)).slice(0, 6), cards = [];
+        words.forEach(function (w, i) { cards.push({ w: w, i: i, face: "pic" }, { w: w, i: i, face: "word" }); });
+        return { cards: shuffle(cards), up: [], matched: {}, found: 0, moves: 0, pairs: words.length, lock: false };
+      } }
   ];
   /* 缺字 look-alikes (data/lookalikes.json): character → [most common mix-up, others…]. */
   var LOOK = {};
@@ -505,6 +516,7 @@
   function gameScores() { var s = lsGet("tx-games", {}); return s && typeof s === "object" ? s : {}; }
   function playView(L) {
     var g = curGame();
+    if (G.phase === "run" && g && g.kind === "memory") return memoryView(g);
     if (G.phase === "run" && g) return choiceView(g);
     if (G.phase === "end" && g) return gameEndView(g);
     var head = L ? top(listHead(L)) : top('<h1 class="title" lang="zh-CN">玩一玩</h1>');
@@ -512,7 +524,7 @@
     var scores = gameScores(), thisWeek = L.id === nextId();
     var cards = GAMES.map(function (g) {
       var n = g.items(L).length, ok = n >= g.min, sc = scores[g.id] && scores[g.id][L.id];
-      var note = !ok ? g.notEnough : sc ? (thisWeek ? "Best this week: " : "Best for this list: ") + sc.best + " / " + sc.total : g.ready(n);
+      var note = !ok ? g.notEnough : sc ? (g.bestText ? g.bestText(sc, thisWeek) : (thisWeek ? "Best this week: " : "Best for this list: ") + sc.best + " / " + sc.total) : g.ready(n);
       return '<button type="button" class="game-card g-' + g.id + (ok ? "" : " off") + '" data-act="gstart" data-g="' + g.id + '"' + (ok ? "" : ' aria-disabled="true"') + ">" +
         '<span class="gc-art" aria-hidden="true">' + g.art(L) + "</span>" +
         '<span class="gc-text"><span class="gc-cn" lang="zh-CN">' + g.cn + '</span><span class="gc-en">' + g.en + '</span><span class="gc-sub">' + g.sub + "</span>" +
@@ -526,10 +538,74 @@
     if (g.items(L).length < g.min) return;
     clearTimeout(gTimer); stopSpeech();
     G = newGame(); G.phase = "run"; G.game = g.id; G.listId = L.id;
-    G.q = g.build(L);
+    if (g.kind === "memory") { G.mm = g.build(L); G.q = []; }
+    else G.q = g.build(L);
     render(); toTop();
-    var p = root.querySelector(".g-choice"); if (p) p.focus({ preventScroll: true });
+    var p = root.querySelector(".g-choice, .mm-card"); if (p) p.focus({ preventScroll: true });
     if (g.onShow) g.onShow(G.q[0]);
+  }
+
+  /* ---------- 翻翻乐 Memory match: picture card ↔ characters card ---------- */
+  function mmLabel(c, n, up) {
+    var m = G.mm, what = c.face === "pic" ? "picture of " + (c.w.english || "a word") : c.w.hanzi;
+    return "Card " + (n + 1) + ", " + (up ? what + (m.matched[c.i] ? ", matched" : "") : "face down");
+  }
+  function memoryView(g) {
+    var m = G.mm, n = m.cards.length, cols = n <= 8 ? 4 : n <= 10 ? 5 : 6;
+    var dots = ""; for (var k = 0; k < m.pairs; k++) dots += "<span" + (k < m.found ? ' class="done"' : "") + "></span>";
+    var cards = m.cards.map(function (c, i) {
+      var up = m.up.indexOf(i) >= 0 || !!m.matched[c.i];
+      return '<button type="button" class="mm-card' + (up ? " up" : "") + (m.matched[c.i] ? " matched" : "") + '" data-act="mflip" data-i="' + i + '" aria-label="' + esc(mmLabel(c, i, up)) + '">' +
+        '<span class="mm-inner"><span class="mm-back" aria-hidden="true"><span>?</span></span><span class="mm-face" aria-hidden="true">' +
+        (c.face === "pic" ? picOf(c.w, "mm-pic") : '<span class="mm-hz n' + Math.min(Array.from(c.w.hanzi).length, 5) + '" lang="zh-CN">' + esc(c.w.hanzi) + "</span>") + "</span></span></button>";
+    }).join("");
+    return '<div class="screen game g-memory">' +
+      '<div class="d-top"><button type="button" class="round-btn" data-act="gquit" aria-label="Back to games">' + IC.close + "</button>" +
+      '<div class="g-dots" role="img" aria-label="' + m.found + " of " + m.pairs + ' pairs found">' + dots + '</div><span class="d-count mm-count">' + m.found + "<span> / " + m.pairs + "</span></span></div>" +
+      howto(g.how[0], g.how[1], "mm-how") + '<p class="mm-moves" aria-live="polite">Moves: <b>' + m.moves + "</b></p>" +
+      '<div class="mm-grid cols-' + cols + '">' + cards + "</div></div>";
+  }
+  /* Flip a card in place (no re-render, so the flip animates and focus stays). Two up: a match stays
+     face up with a blue ring and a chime; otherwise both flip back after ~1 s. A characters card says its word. */
+  function mmSet(i, up) {
+    var m = G.mm, b = root.querySelector('.mm-card[data-i="' + i + '"]'), c = m.cards[i]; if (!b) return;
+    b.classList.toggle("up", up); b.classList.toggle("matched", !!m.matched[c.i]); b.setAttribute("aria-label", mmLabel(c, i, up));
+  }
+  function mmProgress() {
+    var m = G.mm, mv = root.querySelector(".mm-moves b"), ct = root.querySelector(".mm-count"), dots = root.querySelectorAll(".g-memory .g-dots span");
+    if (mv) mv.textContent = m.moves;
+    if (ct) ct.innerHTML = m.found + "<span> / " + m.pairs + "</span>";
+    for (var k = 0; k < dots.length; k++) dots[k].classList.toggle("done", k < m.found);
+    var gd = root.querySelector(".g-memory .g-dots"); if (gd) gd.setAttribute("aria-label", m.found + " of " + m.pairs + " pairs found");
+  }
+  function memoryFlip(i) {
+    var m = G.mm; if (!m || G.phase !== "run") return;
+    var c = m.cards[i]; if (!c || m.lock || m.matched[c.i] || m.up.indexOf(i) >= 0) return;
+    m.up.push(i); mmSet(i, true);
+    if (c.face === "word") { stopSpeech(); speak(c.w.hanzi); }
+    if (m.up.length < 2) return;
+    m.moves++;
+    var a = m.cards[m.up[0]], b = m.cards[m.up[1]], pair = m.up.slice();
+    if (a.i === b.i) {
+      m.matched[a.i] = true; m.found++; m.up = [];
+      pair.forEach(function (k) { mmSet(k, true); }); mmProgress(); chime();
+      if (m.found === m.pairs) { clearTimeout(gTimer); gTimer = setTimeout(memoryFinish, 1100); }
+    } else {
+      m.lock = true; mmProgress();
+      clearTimeout(gTimer);
+      gTimer = setTimeout(function () { if (G.mm !== m) return; m.up = []; m.lock = false; pair.forEach(function (k) { mmSet(k, false); }); }, 1100);
+    }
+  }
+  /* Stars from moves: ≤ pairs+1 → 5, ≤ pairs+3 → 4, ≤ pairs+5 → 3, otherwise 2. Best = fewest moves. No Tricky words. */
+  function memoryFinish() {
+    var m = G.mm, g = curGame(), p = m.pairs, mv = m.moves;
+    var stars = mv <= p + 1 ? 5 : mv <= p + 3 ? 4 : mv <= p + 5 ? 3 : 2;
+    var b = saveBest(g.id, G.listId, mv, p, true);
+    G.result = { stars: stars, first: 0, total: p, missed: 0,
+      head: stars === 5 ? ["太棒了！", "All " + p + " pairs in " + mv + " moves!"] : ["做得好！", "All " + p + " pairs in " + mv + " moves!"],
+      bestText: (b.newBest ? "New best for this list: " : "Best for this list: ") + b.best + " moves" };
+    G.phase = "end"; render(); toTop();
+    var a = root.querySelector('[data-act="gagain"]'); if (a) a.focus({ preventScroll: true });
   }
   /* Shared top bar: ✕ back to the picker, progress dots, "2 / 5". */
   function gameTop(n, i) {
@@ -842,6 +918,7 @@
     mode: function (b) { stopSpeech(); clearTimeout(gTimer); S.mode = b.dataset.m; S.focus = false; S.pic = false; S.clearArm = false; if (S.mode === "dict") D = newDict(); if (S.mode === "play") G = newGame(); render(); },
     gstart: function (b) { if (b.getAttribute("aria-disabled") === "true") return; audioCtx(); startGame(b.dataset.g); }, /* first tap unlocks Web Audio on iOS */
     gpick: function (b) { gamePick(+b.dataset.i); },
+    mflip: function (b) { memoryFlip(+b.dataset.i); },
     ghint: function () { if (G.phase !== "run") return; G.hint = true; render(); var c = root.querySelector(".g-choice:not([disabled])"); if (c) c.focus({ preventScroll: true }); },
     gnext: gameNext,
     gsay: function () { var q = G.q[G.i]; if (q) { stopSpeech(); sayOne("gsay", q.say || q.w.hanzi); } },

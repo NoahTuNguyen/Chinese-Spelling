@@ -548,6 +548,39 @@ body.full .main{max-width:none;padding:0}
 .g-say.speaking .listen-ic{animation:halo-sm 1s ease-in-out infinite}
 @keyframes halo-sm{50%{box-shadow:0 0 0 6px rgba(246,195,67,.3)}}
 
+/* 翻翻乐 Memory match: picture ↔ characters cards; 3 columns on phones, 4–6 wider, last row centred */
+.game-card.g-memory{background:var(--t1)}
+.gc-cards{width:100%;height:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--card)}
+.mm-mini{width:40px;height:52px;border-radius:10px;display:grid;place-items:center;font-size:22px;font-weight:800}
+.mm-mini.back{background:var(--grid);color:#FFFFFF;rotate:-6deg}
+.mm-mini.face{background:var(--card);border:2px solid var(--line);font-family:var(--kai);font-weight:500;color:var(--ink);rotate:5deg}
+.mm-how{margin:14px 0 4px;text-align:center}
+.mm-moves{margin:0 0 14px;text-align:center;font-size:15px;font-weight:600;color:var(--muted)}
+.mm-moves b{color:var(--ink);font-weight:800}
+.mm-grid{--cols:3;--gap:8px;display:flex;flex-wrap:wrap;justify-content:center;gap:var(--gap);width:100%;margin:0 auto}
+.mm-card{flex:0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols));min-width:88px;aspect-ratio:1;padding:0;border:none;border-radius:18px;
+  background:none;perspective:800px;container-type:inline-size}
+.mm-inner{position:relative;display:block;width:100%;height:100%;border-radius:inherit;transform-style:preserve-3d;transition:transform .4s ease}
+.mm-card.up .mm-inner{transform:rotateY(180deg)}
+.mm-back,.mm-face{position:absolute;inset:0;border-radius:inherit;overflow:hidden;display:grid;place-items:center;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.mm-back{background:#2F9461;box-shadow:0 4px 0 var(--lift);color:#FFFFFF;font-size:clamp(28px,36cqi,52px);font-weight:800}
+.mm-back::before,.mm-back::after{content:"";position:absolute;pointer-events:none}
+.mm-back::before{left:50%;top:10%;bottom:10%;border-left:2px dashed rgba(255,255,255,.35)}
+.mm-back::after{top:50%;left:10%;right:10%;border-top:2px dashed rgba(255,255,255,.35)}
+.mm-back>span{position:relative;z-index:1}
+.mm-face{transform:rotateY(180deg);background:var(--card);border:2px solid var(--line)}
+.mm-pic{display:block;width:100%;height:100%;object-fit:cover}
+.mm-pic.emoji{display:grid;place-items:center;font-size:clamp(36px,52cqi,84px);line-height:1;background:var(--t4)}
+.mm-hz{--n:2;font-family:var(--kai);font-size:min(56px,calc(78cqi / var(--n)));line-height:1.1;color:var(--ink);text-align:center;padding:4px}
+.mm-hz.n1{--n:1.4}.mm-hz.n3{--n:3}.mm-hz.n4{--n:4}.mm-hz.n5{--n:5}
+.mm-card.matched .mm-face{border-color:var(--good);box-shadow:inset 0 0 0 3px var(--good)}
+.mm-card.matched{box-shadow:0 0 0 3px var(--good);border-radius:18px}
+@media (min-width:768px){
+  .mm-grid{--gap:14px;max-width:calc(var(--cols) * 168px + (var(--cols) - 1) * var(--gap))}
+  .mm-grid.cols-4{--cols:4}.mm-grid.cols-5{--cols:5}.mm-grid.cols-6{--cols:6}
+  .mm-how{margin-top:20px}
+}
+
 /* 听音选字: big Hear again button, the hint picture appears under it */
 .g-listen{display:flex;flex-direction:column;align-items:center;gap:14px;padding:6px 0 0}
 .g-listen .hear{margin:0}
@@ -615,6 +648,11 @@ body.full .main{max-width:none;padding:0}
   .word:has(.word-main:active),.word.speaking,.tile:active,.big-btn:active,.hear:active .hear-disc,.listen:active{transform:none !important}
   .bars span,.cf,.ws.on,.sticker-new.pop,.hear.speaking .hear-disc,.g-choice.bounce,.g-choice.wobble,.tzg.drop>span,.g-say.speaking .listen-ic{animation:none !important}
   .g-choice:active,.game-card:active{transform:none !important}
+  /* Memory cards: a plain swap instead of the 3D flip */
+  .mm-inner{transition:none !important;transform:none !important}
+  .mm-card .mm-face{transform:none;visibility:hidden}
+  .mm-card.up .mm-face{visibility:visible}
+  .mm-card.up .mm-back{visibility:hidden}
   .bars span:nth-child(1){height:8px}.bars span:nth-child(3){height:12px}
   .pc[open]{animation:none}
   /* The hold ring is progress feedback, not decoration: keep it. */

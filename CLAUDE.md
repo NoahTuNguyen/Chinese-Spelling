@@ -192,6 +192,10 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
     Wrong choices (`missingChoices`): always the FIRST look-alike from `data/lookalikes.json`,
     one more at random, never one that spells another list word; fallback = characters from
     the list's other words.
+  - 翻翻乐 Memory match (`kind: "memory"`, `G.mm`): picture card ↔ characters card for up to 6
+    words with an `img` or emoji; flips update the cards in place (no re-render) so the flip
+    animates and focus stays. Score = moves (best = fewest, `saveBest(..., lower)`); stars
+    ≤ pairs+1 → 5, +3 → 4, +5 → 3, else 2. No Tricky entries.
 - Parent corner: `<dialog>`; press-and-hold 1.5 s on touch, click/keyboard elsewhere.
   Holds the Pinyin/Pictures/English/Slow voice + Sounds/Dark theme switches, how it
   works, Add to Home Screen tip (phones/tablets), clear tricky words, reset stickers.
