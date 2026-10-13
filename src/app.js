@@ -26,8 +26,9 @@
   })();
   function applyTheme() { document.documentElement.setAttribute("data-theme", prefs.dark ? "dark" : "light"); }
   applyTheme();
-  /* focus/fi: Learn's one-word-at-a-time view and its word index. */
-  var S = { lists: [], cur: null, mode: "learn", focus: false, fi: 0, playing: false, clearArm: false, resetArm: false, pcAll: false, loading: true, loadError: "" };
+  /* focus/fi: Learn's one-word-at-a-time view and its word index. pic/pi: the picture card and its word index
+     (picFrom: "learn" grid or "focus" mode, where closing it returns to). */
+  var S = { lists: [], cur: null, mode: "learn", focus: false, fi: 0, pic: false, pi: 0, picFrom: "learn", playing: false, clearArm: false, resetArm: false, pcAll: false, loading: true, loadError: "" };
   /* Dictation: phase idle → run → check → done. src "list" | "tricky"; retest = practising missed words again. */
   function newDict() { return { src: "list", listId: null, retest: false, queue: [], i: 0, phase: "idle", marks: {}, result: null }; }
   var D = newDict();
@@ -137,9 +138,11 @@
 
   /* ---------- per-device records ---------- */
   function trickyMap() { return lsGet("tx-tricky", {}); }
+  function findWord(hanzi) { for (var i = 0; i < S.lists.length; i++) for (var j = 0; j < S.lists[i].words.length; j++) if (S.lists[i].words[j].hanzi === hanzi) return S.lists[i].words[j]; return null; }
   function trickyArr() {
     var m = trickyMap();
-    return Object.keys(m).map(function (k) { var o = m[k]; return { hanzi: k, pinyin: o.pinyin, english: o.english, pic: o.pic, misses: o.misses }; })
+    /* Tricky words saved before pictures existed pick up the picture from the lists. */
+    return Object.keys(m).map(function (k) { var o = m[k], f = findWord(k) || {}; return { hanzi: k, pinyin: o.pinyin, english: o.english, pic: o.pic || f.pic, img: o.img || f.img, misses: o.misses }; })
       .sort(function (a, b) { return b.misses - a.misses; });
   }
   /* tx-stickers: { "<listId>": { best, total, perfect, at } } */
@@ -193,14 +196,25 @@
   }
   function boxes(text, cls, empty) {
     var chars = Array.from(text || "");
-    return '<span class="boxes n' + Math.min(chars.length, 5) + (cls ? " " + cls : "") + '">' + chars.map(function (c) { return '<span class="tzg"><span>' + (empty ? "" : esc(c)) + "</span></span>"; }).join("") + "</span>";
+    return '<span class="boxes n' + Math.min(chars.length, 8) + (cls ? " " + cls : "") + '">' + chars.map(function (c) { return '<span class="tzg"><span>' + (empty ? "" : esc(c)) + "</span></span>"; }).join("") + "</span>";
   }
   var BARS = '<span class="bars" aria-hidden="true"><span></span><span></span><span></span></span>';
-  function card(w, i, src, extra) {
-    return '<button type="button" class="word t' + (i % 5) + (prefs.pics && w.pic ? " has-pic" : "") + '" data-act="say" data-src="' + src + '" data-i="' + i + '" data-hl="' + src + "-" + i + '" aria-label="Hear ' + esc(w.hanzi) + '">' +
-      (prefs.pics && w.pic ? '<span class="pic" aria-hidden="true">' + esc(w.pic) + "</span>" : "") + BARS + boxes(w.hanzi) +
+  /* Word picture (Pictures switch on): the 4:3 illustration, else the emoji in a 4:3 area, else nothing. */
+  function picture(w, cls, eager) {
+    if (!prefs.pics) return "";
+    if (w.img) return '<img class="' + cls + '" src="' + esc(w.img) + '" alt="' + esc(w.english || "") + '" width="640" height="480"' + (eager ? "" : ' loading="lazy"') + ' decoding="async">';
+    if (w.pic) return '<span class="' + cls + ' emoji" role="img" aria-label="' + esc(w.english || "") + '"><span aria-hidden="true">' + esc(w.pic) + "</span></span>";
+    return "";
+  }
+  /* A word card: the main button plays the word; "ⓘ more" (Learn only) opens the picture card. */
+  function card(w, i, src, extra, more) {
+    return '<div class="word t' + (i % 5) + '" data-hl="' + src + "-" + i + '">' +
+      '<button type="button" class="word-main" data-act="say" data-src="' + src + '" data-i="' + i + '" aria-label="Hear ' + esc(w.hanzi) + '">' +
+      picture(w, "card-pic") + BARS + boxes(w.hanzi) +
       (prefs.py && w.pinyin ? '<span class="py">' + esc(w.pinyin) + "</span>" : "") +
-      (prefs.en && w.english ? '<span class="en">' + esc(w.english) + "</span>" : "") + (extra || "") + "</button>";
+      (prefs.en && w.english ? '<span class="en">' + esc(w.english) + "</span>" : "") + (extra || "") + "</button>" +
+      (more ? '<button type="button" class="more" data-act="picview" data-i="' + i + '" aria-label="More about ' + esc(w.hanzi) + '"><span class="more-pill"><span aria-hidden="true">ⓘ</span> more</span></button>' : "") +
+      "</div>";
   }
   function tile(act, icon, cn, en) {
     return '<button type="button" class="tile" data-act="' + act + '"><span class="tile-ic">' + icon + '</span><span class="tile-cn" lang="zh-CN">' + cn + '</span><span class="tile-en">' + en + "</span></button>";
@@ -212,13 +226,14 @@
   /* ---------- Learn ---------- */
   function learnView(L) {
     if (!L) return top('<h1 class="title">听写</h1>') + '<div class="panel"><p>No spelling lists have been added yet.</p></div>';
+    if (S.pic) return picView(L);
     if (S.focus) return focusView(L);
     var main = (L.id === nextId() ? '<span class="pill-week"><span lang="zh-CN">本周</span> This week</span>' : "") +
       '<h1 class="title" lang="zh-CN">' + esc(titleOf(L)) + "</h1>" + dateLine(L);
     return top(main, stickerStrip()) +
       '<div class="learn-bar">' + howto("点一点，听一听", "Tap a word to hear it.") +
       '<button type="button" class="onebyone" data-act="focus">' + IC.one + '<span lang="zh-CN">一个一个</span> One by one</button></div>' +
-      '<div class="grid">' + L.words.map(function (w, i) { return card(w, i, "learn"); }).join("") +
+      '<div class="grid">' + L.words.map(function (w, i) { return card(w, i, "learn", "", true); }).join("") +
       (S.playing ? tile("playall", IC.stop, "停一停", "Stop") : tile("playall", IC.play, "全部听", "Play all")) + "</div>" + keyHints();
   }
   /* Focus mode: one word at a time; swipe, the arrow buttons or ←/→ move between words. */
@@ -232,14 +247,40 @@
       '<div class="f-stage">' +
       '<button type="button" class="f-nav prev" data-act="fprev" aria-label="Previous word"' + (i === 0 ? " disabled" : "") + ">" + IC.chevL + "</button>" +
       '<div class="f-card t' + (i % 5) + '" data-hl="focus-' + i + '">' + BARS +
-      (prefs.pics && w.pic ? '<span class="f-pic" aria-hidden="true">' + esc(w.pic) + "</span>" : "") + boxes(w.hanzi) +
+      picture(w, "f-pic", true) + boxes(w.hanzi) +
       (prefs.py && w.pinyin ? '<span class="f-py">' + esc(w.pinyin) + "</span>" : "") +
       (prefs.en && w.english ? '<span class="f-en">' + esc(w.english) + "</span>" : "") +
-      '<button type="button" class="listen" data-act="fsay" aria-label="Listen to ' + esc(w.hanzi) + '"><span class="listen-ic">' + IC.spkMid + '</span><span class="listen-cn" lang="zh-CN">听一听</span><span class="listen-en">Listen</span></button></div>' +
+      '<div class="f-acts"><button type="button" class="listen" data-act="fsay" aria-label="Listen to ' + esc(w.hanzi) + '"><span class="listen-ic">' + IC.spkMid + '</span><span class="listen-cn" lang="zh-CN">听一听</span><span class="listen-en">Listen</span></button>' +
+      '<button type="button" class="f-more" data-act="picview" data-i="' + i + '" aria-label="More about ' + esc(w.hanzi) + '"><span aria-hidden="true">ⓘ</span><span lang="zh-CN">看图</span> More</button></div></div>' +
       '<button type="button" class="f-nav next" data-act="fnext" aria-label="Next word"' + (i === n - 1 ? " disabled" : "") + ">" + IC.chevR + "</button></div>" +
       '<div class="f-foot">' + howto("滑一滑", "Swipe or use the arrows", "f-howto") +
       '<div class="f-dots" role="img" aria-label="Word ' + (i + 1) + " of " + n + '">' + dots + "</div>" +
       '<button type="button" class="f-dict" data-act="dstart">' + IC.pencil + '<span lang="zh-CN">开始听写</span> Dictation</button></div>' +
+      '<p class="sr" aria-live="polite">Word ' + (i + 1) + " of " + n + "</p></div>";
+  }
+
+  /* Picture card: big picture, word, explanation and an example sentence; prev/next, swipe, ←/→, Esc closes. */
+  function picView(L) {
+    var n = L.words.length, i = S.pi = Math.max(0, Math.min(S.pi, n - 1)), w = L.words[i];
+    var dots = ""; for (var k = 0; k < n; k++) dots += "<span" + (k === i ? ' class="on"' : "") + "></span>";
+    var media = w.img ? '<img class="pv-pic" src="' + esc(w.img) + '" alt="' + esc(w.english || "") + '" width="640" height="480" decoding="async">'
+      : w.pic ? '<span class="pv-pic emoji" role="img" aria-label="' + esc(w.english || "") + '"><span aria-hidden="true">' + esc(w.pic) + "</span></span>" : "";
+    return '<div class="pv">' +
+      '<div class="d-top"><button type="button" class="round-btn" data-act="pvclose" aria-label="Close picture card">' + IC.close + "</button>" +
+      '<span class="d-title" lang="zh-CN">' + esc(titleOf(L)) + '</span><span class="d-count">' + (i + 1) + "<span> / " + n + "</span></span></div>" +
+      howto("看图说一说", "Look, listen and read the sentence", "pv-how") +
+      '<div class="pv-stage">' +
+      '<button type="button" class="f-nav prev" data-act="pvprev" aria-label="Previous word"' + (i === 0 ? " disabled" : "") + ">" + IC.chevL + "</button>" +
+      '<div class="pv-card t' + (i % 5) + (media ? "" : " no-pic") + '" data-hl="pv-' + i + '">' + BARS + media +
+      '<div class="pv-info">' +
+      '<div class="pv-word">' + boxes(w.hanzi) + '<div class="pv-side">' + (w.pinyin ? '<span class="pv-py">' + esc(w.pinyin) + "</span>" : "") +
+      '<button type="button" class="listen" data-act="pvsay" aria-label="Listen to ' + esc(w.hanzi) + '"><span class="listen-ic">' + IC.spkMid + '</span><span class="listen-cn" lang="zh-CN">听一听</span><span class="listen-en">Listen</span></button></div></div>' +
+      (w.explain ? '<p class="pv-explain">' + esc(w.explain) + "</p>" : "") +
+      (w.sentence ? '<div class="pv-sent"><p class="pv-s-cn" lang="zh-CN">' + esc(w.sentence) + "</p>" + (w.sentencePinyin ? '<p class="pv-s-py">' + esc(w.sentencePinyin) + "</p>" : "") +
+        '<button type="button" class="sent-play" data-act="pvsent" data-hl="pvs-' + i + '" aria-label="Hear the sentence"><span class="listen-ic">' + IC.spkMid + '</span><span class="listen-cn" lang="zh-CN">听句子</span><span class="listen-en">Hear the sentence</span></button></div>' : "") +
+      "</div></div>" +
+      '<button type="button" class="f-nav next" data-act="pvnext" aria-label="Next word"' + (i === n - 1 ? " disabled" : "") + ">" + IC.chevR + "</button></div>" +
+      '<div class="f-dots pv-dots" role="img" aria-label="Word ' + (i + 1) + " of " + n + '">' + dots + "</div>" +
       '<p class="sr" aria-live="polite">Word ' + (i + 1) + " of " + n + "</p></div>";
   }
 
@@ -408,8 +449,15 @@
     var els = container.querySelectorAll("[data-act]");
     for (var i = 0; i < els.length; i++) if (keyOf(els[i].dataset) === key && els[i].offsetParent !== null && !els[i].disabled) { els[i].focus({ preventScroll: true }); return; }
   }
+  /* Warm the cache with the current list's pictures only; everything else loads lazily when shown. */
+  var preloaded = null;
+  function preloadPictures(L) {
+    if (!L || !prefs.pics || preloaded === L.id) return;
+    preloaded = L.id;
+    L.words.forEach(function (w) { if (w.img) { var im = new Image(); im.decoding = "async"; im.src = w.img; } });
+  }
   function render() {
-    var full = (S.mode === "dict" && D.phase !== "idle") || (S.mode === "learn" && S.focus);
+    var full = (S.mode === "dict" && D.phase !== "idle") || (S.mode === "learn" && (S.focus || S.pic));
     document.body.classList.toggle("full", full);
     if (S.loading) { root.innerHTML = appbar() + '<main class="main"><p class="loading">Loading spelling lists…</p></main>'; return; }
     if (S.loadError) { root.innerHTML = appbar() + '<main class="main"><p class="banner">' + esc(S.loadError) + "</p></main>"; return; }
@@ -420,6 +468,7 @@
     root.innerHTML = appbar() + '<main class="main">' + (full ? "" : banner()) + v + "</main>";
     refocus(root, k);
     if (pc.open) renderParent();
+    preloadPictures(L);
   }
 
   /* ---------- dictation flow ---------- */
@@ -427,7 +476,7 @@
     stopSpeech();
     D = newDict();
     D.src = src; D.listId = listId || null; D.retest = !!retest; D.phase = "run";
-    D.queue = shuffle(words.map(function (w) { return { hanzi: w.hanzi, pinyin: w.pinyin, english: w.english, pic: w.pic }; }));
+    D.queue = shuffle(words.map(function (w) { return { hanzi: w.hanzi, pinyin: w.pinyin, english: w.english, pic: w.pic, img: w.img }; }));
     S.mode = "dict"; S.focus = false; render(); toTop(); sayCurrent();
   }
   function sayCurrent() {
@@ -443,7 +492,7 @@
     var m = trickyMap();
     D.queue.forEach(function (w, i) {
       var v = D.marks[i]; if (!v) return;
-      if (v === "no") { var o = m[w.hanzi] || { misses: 0, streak: 0 }; o.misses++; o.streak = 0; o.pinyin = w.pinyin; o.english = w.english; if (w.pic) o.pic = w.pic; m[w.hanzi] = o; }
+      if (v === "no") { var o = m[w.hanzi] || { misses: 0, streak: 0 }; o.misses++; o.streak = 0; o.pinyin = w.pinyin; o.english = w.english; if (w.pic) o.pic = w.pic; if (w.img) o.img = w.img; m[w.hanzi] = o; }
       else if (m[w.hanzi]) { m[w.hanzi].streak = (m[w.hanzi].streak || 0) + 1; if (m[w.hanzi].streak >= 2) delete m[w.hanzi]; }
     });
     lsSet("tx-tricky", m);
@@ -470,15 +519,24 @@
     if (src === "review") return D.queue[i];
   }
   function sayFocus() { var L = curList(), w = L && L.words[S.fi]; if (!w) return; stopSpeech(); sayOne("focus-" + S.fi, w.hanzi); }
+  function sayPic() { var L = curList(), w = L && L.words[S.pi]; if (!w) return; stopSpeech(); sayOne("pv-" + S.pi, w.hanzi); }
+  /* Prev/next in focus mode or the picture card (whichever is open). */
   function moveFocus(d) {
     var L = curList(); if (!L) return;
-    var n = Math.max(0, Math.min(L.words.length - 1, S.fi + d)); if (n === S.fi) return;
-    S.fi = n; stopSpeech(); render(); sayFocus();
+    var cur = S.pic ? S.pi : S.fi, n = Math.max(0, Math.min(L.words.length - 1, cur + d)); if (n === cur) return;
+    if (S.pic) S.pi = n; else S.fi = n;
+    stopSpeech(); render(); if (S.pic) sayPic(); else sayFocus();
+  }
+  function closePic() {
+    stopSpeech(); var i = S.pi; S.pic = false;
+    if (S.picFrom === "focus") { S.focus = true; S.fi = i; render(); return; }
+    render();
+    var b = root.querySelector('.more[data-i="' + i + '"]'); if (b) b.focus();
   }
   var lastPointer = "mouse";
   var ACT = {
-    pick: function (b) { stopSpeech(); S.cur = b.dataset.id; S.fi = 0; if (S.mode === "dict") D = newDict(); closeParent(); render(); },
-    mode: function (b) { stopSpeech(); S.mode = b.dataset.m; S.focus = false; S.clearArm = false; if (S.mode === "dict") D = newDict(); render(); },
+    pick: function (b) { stopSpeech(); S.cur = b.dataset.id; S.fi = 0; S.pi = 0; if (S.mode === "dict") D = newDict(); closeParent(); render(); },
+    mode: function (b) { stopSpeech(); S.mode = b.dataset.m; S.focus = false; S.pic = false; S.clearArm = false; if (S.mode === "dict") D = newDict(); render(); },
     say: function (b) {
       var src = b.dataset.src, i = +b.dataset.i, w = wordFor(src, i); if (!w) return;
       var wasPlaying = S.playing; stopSpeech(); if (wasPlaying) render();
@@ -498,11 +556,17 @@
     focus: function () { stopSpeech(); S.focus = true; S.fi = 0; render(); toTop(); sayFocus(); },
     unfocus: function () {
       stopSpeech(); var i = S.fi; S.focus = false; render();
-      var c = root.querySelector('.word[data-i="' + i + '"]'); if (c) c.focus();
+      var c = root.querySelector('.word-main[data-i="' + i + '"]'); if (c) c.focus();
     },
     fprev: function () { moveFocus(-1); },
     fnext: function () { moveFocus(1); },
     fsay: sayFocus,
+    picview: function (b) { stopSpeech(); S.picFrom = S.focus ? "focus" : "learn"; S.pi = +b.dataset.i; S.focus = false; S.pic = true; render(); toTop(); sayPic(); },
+    pvclose: closePic,
+    pvprev: function () { moveFocus(-1); },
+    pvnext: function () { moveFocus(1); },
+    pvsay: sayPic,
+    pvsent: function () { var L = curList(), w = L && L.words[S.pi]; if (!w || !w.sentence) return; stopSpeech(); sayOne("pvs-" + S.pi, w.sentence); },
     pref: function (b) { var k = b.dataset.k; prefs[k] = !prefs[k]; lsSet("tx-prefs", prefs); applyTheme(); render(); },
     parent: function (b, e) {
       /* Keyboard (detail 0) and mouse open straight away; a short tap asks for a hold instead. */
@@ -543,6 +607,13 @@
     if (pc.open || e.ctrlKey || e.metaKey || e.altKey || S.loading) return;
     var a = document.activeElement, act = a && a.dataset ? a.dataset.act : null, onBtn = !!(a && a.tagName === "BUTTON");
     var k = e.key, space = k === " " || k === "Spacebar";
+    if (S.mode === "learn" && S.pic) {
+      if (k === "ArrowLeft") { e.preventDefault(); moveFocus(-1); }
+      else if (k === "ArrowRight") { e.preventDefault(); moveFocus(1); }
+      else if (k === "Escape") { e.preventDefault(); closePic(); }
+      else if (space && !onBtn) { e.preventDefault(); sayPic(); }
+      return;
+    }
     if (S.mode === "learn" && S.focus) {
       if (k === "ArrowLeft") { e.preventDefault(); moveFocus(-1); }
       else if (k === "ArrowRight") { e.preventDefault(); moveFocus(1); }
@@ -550,7 +621,8 @@
       return;
     }
     if (S.mode === "learn" && (k === "ArrowLeft" || k === "ArrowRight")) {
-      var items = Array.prototype.slice.call(root.querySelectorAll(".grid .word, .grid .tile")), idx = items.indexOf(a);
+      var items = Array.prototype.slice.call(root.querySelectorAll(".grid .word-main, .grid .tile")), idx = items.indexOf(a);
+      if (idx < 0 && act === "picview") idx = items.indexOf(a.parentNode.querySelector(".word-main")); /* from "ⓘ more", move by card */
       if (idx < 0 && onBtn) return; /* arrows stay with the tab bar and other buttons */
       e.preventDefault();
       var to = idx < 0 ? 0 : Math.max(0, Math.min(items.length - 1, idx + (k === "ArrowRight" ? 1 : -1)));
@@ -564,10 +636,10 @@
     }
   });
 
-  /* Swipe between words in focus mode (horizontal moves only; vertical scrolling still works). */
+  /* Swipe between words in focus mode and the picture card (horizontal moves only; vertical scrolling still works). */
   var SWIPE = null;
   root.addEventListener("pointerdown", function (e) {
-    if (!S.focus || !e.target.closest(".f-stage") || e.target.closest("button")) return;
+    if (!((S.focus && e.target.closest(".f-stage")) || (S.pic && e.target.closest(".pv-stage"))) || e.target.closest("button")) return;
     SWIPE = { id: e.pointerId, x: e.clientX, y: e.clientY };
   });
   root.addEventListener("pointerup", function (e) {

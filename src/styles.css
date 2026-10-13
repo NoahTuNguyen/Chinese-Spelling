@@ -140,15 +140,24 @@ body.full .tabs{display:none}
 
 /* ---------- word cards with 田字格 ---------- */
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.word{--box-max:56px;position:relative;container-type:inline-size;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-  min-width:0;padding:16px 8px 12px;border-radius:24px;border:2px solid var(--edge);background:var(--t0);box-shadow:0 3px 0 var(--lift);
-  transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+/* .word is the card; .word-main (the whole card) plays the word; .more opens the picture card. */
+.word{--box-max:56px;position:relative;container-type:inline-size;display:flex;min-width:0;border-radius:24px;border:2px solid var(--edge);
+  background:var(--t0);box-shadow:0 3px 0 var(--lift);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
 .word.t1{background:var(--t1)}.word.t2{background:var(--t2)}.word.t3{background:var(--t3)}.word.t4{background:var(--t4)}
-.word:active{transform:scale(.97)}
+.word-main{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px 8px 12px;
+  border:none;border-radius:22px;background:none;color:inherit}
+.word-main:has(.card-pic){justify-content:flex-start;padding-top:8px}
+.word-main:focus-visible{outline:none}
+.word:has(.word-main:focus-visible){outline:4px solid var(--grid);outline-offset:2px}
+.word:has(.word-main:active){transform:scale(.97)}
 .word.speaking{border-color:var(--pencil);box-shadow:0 0 0 1px var(--pencil),0 6px 0 rgba(246,195,67,.55);transform:scale(1.03)}
-.pic{position:absolute;left:10px;top:8px;font-size:24px;line-height:1}
-.word.has-pic{padding-top:38px} /* picture sits top-left, clear of the 田字格 */
-.bars{position:absolute;right:12px;top:14px;display:none;align-items:flex-end;gap:3px;height:18px}
+.card-pic{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:16px;background:var(--card);margin-bottom:2px}
+.card-pic.emoji{display:grid;place-items:center;font-size:clamp(34px,28cqi,60px);line-height:1}
+.more{position:absolute;top:2px;right:2px;min-width:48px;height:48px;padding:6px;border:none;background:none;display:grid;place-items:center}
+.more-pill{padding:2px 9px;border-radius:999px;background:#FFFFFF;color:#1D2B36;font-size:12px;font-weight:700;line-height:1.5;white-space:nowrap;box-shadow:0 1px 3px rgba(29,43,54,.2)}
+.more:focus-visible{outline:none}
+.more:focus-visible .more-pill{outline:3px solid var(--grid);outline-offset:1px}
+.bars{position:absolute;left:12px;top:12px;display:none;align-items:flex-end;gap:3px;height:26px;padding:4px 6px;border-radius:8px;background:#FFFFFF}
 .bars span{width:4px;height:18px;border-radius:2px;background:var(--bars);transform-origin:bottom;animation:bar .9s ease-in-out infinite}
 .bars span:nth-child(2){animation-delay:-.3s}
 .bars span:nth-child(3){animation-delay:-.6s}
@@ -157,7 +166,7 @@ body.full .tabs{display:none}
 
 /* Boxes shrink to fit the card: --n is the character count, 100cqi the card's width. */
 .boxes{--n:2;--box:min(var(--box-max,56px),calc((100cqi - 24px) / var(--n)));display:flex;justify-content:center}
-.boxes.n1{--n:1}.boxes.n3{--n:3}.boxes.n4{--n:4}.boxes.n5{--n:5}
+.boxes.n1{--n:1}.boxes.n3{--n:3}.boxes.n4{--n:4}.boxes.n5{--n:5}.boxes.n6{--n:6}.boxes.n7{--n:7}.boxes.n8{--n:8}
 .tzg{position:relative;display:grid;place-items:center;width:var(--box);height:var(--box);border:2px solid var(--grid);background:var(--card);
   font-family:var(--kai);font-size:calc(var(--box) * .75);line-height:1;color:var(--ink)}
 .tzg+.tzg{border-left:none}
@@ -179,9 +188,12 @@ body.full .tabs{display:none}
 
 @media (min-width:768px){
   .grid{grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:16px}
-  .word{--box-max:70px;gap:8px;padding:22px 10px 16px;border-radius:28px;box-shadow:0 4px 0 var(--lift)}
-  .pic{left:14px;top:12px;font-size:28px}
-  .word.has-pic{padding-top:46px}
+  .word{--box-max:70px;border-radius:28px;box-shadow:0 4px 0 var(--lift)}
+  .word-main{gap:8px;padding:22px 10px 16px;border-radius:26px}
+  .word-main:has(.card-pic){padding-top:10px}
+  .card-pic{border-radius:18px}
+  .more{top:4px;right:4px}
+  .more-pill{font-size:13px;padding:3px 10px}
   .py{font-size:21px}
   .en{font-size:15px}
   .tile{min-height:180px;border-radius:28px;box-shadow:0 5px 0 var(--pencil-shadow);gap:6px}
@@ -388,9 +400,13 @@ body.full .main{max-width:none;padding:0}
 .f-card .boxes{--box:min(var(--fmax,140px),calc((100cqi - 48px) / var(--n)))}
 .f-card .tzg{border-width:3px}
 .f-card .tzg::before{border-left-width:2px}.f-card .tzg::after{border-top-width:2px}
-.f-card .bars{right:22px;top:22px}
+.f-card .bars{left:auto;right:22px;top:22px}
 .f-card.speaking .bars{display:flex}
-.f-pic{font-size:56px;line-height:1}
+.f-pic{display:block;height:160px;width:auto;max-width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:20px;background:var(--card)}
+.f-pic.emoji{display:grid;place-items:center;font-size:96px;line-height:1}
+.f-acts{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px}
+.f-more{min-height:56px;margin-top:4px;padding:0 20px;border-radius:999px;border:2px solid var(--line);background:var(--card);display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600}
+.f-more [lang]{font-size:18px;font-weight:800}
 .f-py{font-size:30px;font-weight:800;line-height:1.1;text-align:center}
 .f-en{font-size:18px;font-weight:600;color:var(--muted);text-align:center}
 .listen{min-height:64px;margin-top:4px;padding:0 28px 0 10px;border-radius:999px;border:none;background:var(--pencil);box-shadow:0 5px 0 var(--pencil-shadow);color:var(--on-pencil);display:flex;align-items:center;gap:12px}
@@ -415,7 +431,8 @@ body.full .main{max-width:none;padding:0}
   .f-stage{grid-template-columns:auto minmax(0,640px) auto;grid-template-areas:"prev card next";justify-content:center;gap:40px}
   .f-nav{width:84px;height:84px}
   .f-card{--fmax:200px;padding:30px 30px 34px;border-radius:40px}
-  .f-pic{font-size:72px}
+  .f-pic{height:200px}
+  .f-pic.emoji{font-size:120px}
   .f-py{font-size:40px}
   .f-en{font-size:20px}
   .listen{min-height:70px;padding:0 34px 0 12px}
@@ -428,10 +445,58 @@ body.full .main{max-width:none;padding:0}
   .f-dict{justify-self:end}
 }
 
+/* Picture card (opened from a word card's "ⓘ more" or focus mode) */
+.pv{max-width:1100px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;gap:12px;padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px))}
+.pv-how{margin:0;text-align:center}
+.pv-stage{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"card card" "prev next";align-items:center;align-content:center;gap:16px;touch-action:pan-y}
+.pv-card{grid-area:card;justify-self:center;position:relative;width:100%;max-width:900px;container-type:inline-size;display:flex;flex-direction:column;gap:14px;
+  padding:12px 12px 18px;border-radius:32px;border:3px solid var(--edge);background:var(--t0);box-shadow:0 8px 0 var(--lift)}
+.pv-card.t1{background:var(--t1)}.pv-card.t2{background:var(--t2)}.pv-card.t3{background:var(--t3)}.pv-card.t4{background:var(--t4)}
+.pv-card .bars{left:auto;right:24px;top:24px}
+.pv-card.speaking .bars{display:flex}
+.pv-pic{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:22px;background:var(--card)}
+.pv-pic.emoji{display:grid;place-items:center;font-size:clamp(80px,30cqi,150px);line-height:1}
+.pv-info{min-width:0;display:flex;flex-direction:column;gap:14px}
+.pv-word{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 18px}
+.pv-word .boxes{--box:min(84px,calc((100cqi - 40px) / var(--n)))}
+.pv-word .tzg{border-width:2.5px}
+.pv-side{display:flex;flex-direction:column;align-items:center;gap:8px}
+.pv-py{font-size:26px;font-weight:800;line-height:1.1;text-align:center}
+.pv-explain{margin:0 4px;font-size:17px;font-weight:600;line-height:1.45;text-align:center}
+.pv-sent{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 14px 14px;border-radius:20px;background:var(--card);text-align:center}
+.pv-s-cn{margin:0;font-family:var(--kai);font-size:26px;line-height:1.3}
+.pv-s-py{margin:0;font-size:15px;font-weight:600;color:var(--muted)}
+.sent-play{min-height:52px;margin-top:6px;padding:0 20px 0 7px;border-radius:999px;border:none;background:var(--solid);color:var(--on-solid);display:flex;align-items:center;gap:10px}
+.sent-play .listen-ic{width:38px;height:38px}
+.sent-play .listen-cn{font-size:18px}
+.sent-play .listen-en{font-size:14px}
+.sent-play.speaking{background:var(--pencil);color:var(--on-pencil)}
+.pv-dots{order:0;margin-top:2px}
+/* Phones: boxes and a compact Listen on one row, so prev/next stay on screen */
+@media (max-width:767px){
+  .pv-word .boxes{--box:min(64px,calc((100cqi - 40px) / var(--n)))}
+  .pv-py{font-size:22px}
+  .pv-word .listen{min-height:56px;padding:0 18px 0 6px}
+  .pv-word .listen-en{display:none}
+  .pv-card{gap:12px}
+  .pv-explain{font-size:16px}
+  .pv-s-cn{font-size:24px}
+}
+@media (min-width:768px){
+  .pv{padding:24px 32px 28px}
+  .pv-stage{grid-template-columns:auto minmax(0,900px) auto;grid-template-areas:"prev card next";justify-content:center;gap:28px}
+  .pv-card{padding:16px 16px 22px}
+}
+/* Wide screens: picture on the left, word and sentence on the right */
+@media (min-width:1000px){
+  .pv-card{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:center;gap:24px;padding:18px 24px 18px 18px}
+  .pv-card.no-pic{grid-template-columns:minmax(0,1fr)}
+}
+
 /* ---------- reduced motion: no bounce, no scaling, no confetti fall, still bars ---------- */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
-  .word:active,.word.speaking,.tile:active,.big-btn:active,.hear:active .hear-disc,.listen:active{transform:none !important}
+  .word:has(.word-main:active),.word.speaking,.tile:active,.big-btn:active,.hear:active .hear-disc,.listen:active{transform:none !important}
   .bars span,.cf,.ws.on,.sticker-new.pop,.hear.speaking .hear-disc{animation:none !important}
   .bars span:nth-child(1){height:8px}.bars span:nth-child(3){height:12px}
   .pc[open]{animation:none}
