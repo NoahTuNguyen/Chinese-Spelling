@@ -3,6 +3,7 @@
   "use strict";
   var root = document.getElementById("root");
   var pc = document.getElementById("parent"); /* Parent corner <dialog>, kept outside #root so re-renders don't close it */
+  var ws = document.getElementById("weeks"); /* Week sheet <dialog> (choose a list) */
 
   /* ---------- storage helpers (per device) ---------- */
   function lsGet(k, def) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
@@ -61,7 +62,6 @@
     var n = Math.round((d - parseDate(todayStr())) / 86400000);
     return n < 0 ? "Past list" : n === 0 ? "Test today" : n === 1 ? "Tomorrow" : "in " + n + " days";
   }
-  function whenTag(s) { var t = whenText(s); return t ? '<span class="when' + (t === "Past list" ? " past" : "") + '">' + t + "</span>" : ""; }
   function titleOf(l) { return "听写" + (l && l.number ? "（" + l.number + "）" : ""); }
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
@@ -184,38 +184,6 @@
   }
   /* Page heading row: heading on the left, the Parent corner gear on the right (phone), extras below. */
   function top(main, extra) { return '<div class="top"><div class="top-main">' + main + "</div>" + gearBtn() + (extra || "") + "</div>"; }
-  function dateLine(L) { return L && L.date ? '<p class="date"><span class="d-short">' + esc(fmtShort(L.date)) + '</span><span class="d-long">' + esc(fmtLong(L.date)) + "</span>" + whenTag(L.date) + "</p>" : ""; }
-
-  /* Week strip: one chip per list in date order (short date, 听写 number, sticker state). Picks the list;
-     replaces the old sticker strip and the Parent corner list picker. */
-  function weekStrip() {
-    if (S.lists.length < 2) return "";
-    var st = stickers(), nx = nextId(), now = new Date();
-    var chips = S.lists.map(function (l) {
-      var s = st[l.id], d = parseDate(l.date), past = TXL.isPast(l, now);
-      var state = s ? (s.perfect ? "perfect sticker" : "sticker earned") : "no sticker yet";
-      var label = "听写" + (l.number || l.id) + ", " + (d ? fmtLong(l.date) : "no date") + ", " + state + (l.id === nx ? ", next test" : "");
-      return '<button type="button" class="wk' + (past ? " past" : "") + '" data-act="pick" data-id="' + esc(l.id) + '" aria-pressed="' + (l.id === S.cur) + '" aria-label="' + esc(label) + '">' +
-        (l.id === nx ? '<span class="wk-next" aria-hidden="true">Next</span>' : "") +
-        '<span class="wk-date" aria-hidden="true">' + (d ? d.getDate() + " " + MON[d.getMonth()] : "—") + "</span>" +
-        '<span class="wk-num" lang="zh-CN" aria-hidden="true">' + esc(l.number || l.id) + "</span>" +
-        '<span class="wk-stk' + (s ? " got" + (s.perfect ? " perfect" : "") : "") + '" aria-hidden="true">' + (s ? starFill(14) : "") + "</span></button>";
-    }).join("");
-    return '<div class="weeks" role="group" aria-label="Spelling lists by test date"><div class="wk-row">' + chips + "</div></div>";
-  }
-  /* Keep the strip where the child left it; when the chosen list changes, bring its chip into view. */
-  var wkScroll = { cur: null, left: 0 };
-  function placeWeekStrip() {
-    var sc = root.querySelector(".weeks"); if (!sc) return;
-    var chip = sc.querySelector('.wk[aria-pressed="true"]');
-    if (wkScroll.cur === S.cur) { sc.scrollLeft = wkScroll.left; }
-    else if (chip) {
-      var l = chip.offsetLeft, max = sc.scrollWidth - sc.clientWidth; /* .weeks is position:relative, so offsetLeft is within it */
-      if (l < sc.scrollLeft || l + chip.offsetWidth > sc.scrollLeft + sc.clientWidth) sc.scrollLeft = Math.max(0, Math.min(max, l - (sc.clientWidth - chip.offsetWidth) / 2));
-    }
-    wkScroll = { cur: S.cur, left: sc.scrollLeft };
-    sc.addEventListener("scroll", function () { wkScroll.left = sc.scrollLeft; }, { passive: true });
-  }
   function boxes(text, cls, empty) {
     var chars = Array.from(text || "");
     return '<span class="boxes n' + Math.min(chars.length, 8) + (cls ? " " + cls : "") + '">' + chars.map(function (c) { return '<span class="tzg"><span>' + (empty ? "" : esc(c)) + "</span></span>"; }).join("") + "</span>";
@@ -250,9 +218,24 @@
     var d = defaultId();
     return d && S.cur !== d ? '<button type="button" class="back-week' + (cls ? " " + cls : "") + '" data-act="thisweek"><span lang="zh-CN">回到本周</span> Back to this week</button>' : "";
   }
-  function listHead(L) {
-    return (L.id === nextId() ? '<span class="pill-week"><span lang="zh-CN">本周</span> This week</span>' : "") +
-      '<div class="title-row"><h1 class="title" lang="zh-CN">' + esc(titleOf(L)) + "</h1>" + backPill() + "</div>" + dateLine(L);
+  /* Title picker: the list title is a button (with ▾ and the date line) that opens the week sheet. */
+  var CARET = ic(18, '<path d="M6 9l6 6 6-6"/>', line(2.8));
+  function titlePicker(L, small) {
+    var when = L.date ? fmtShort(L.date) + " · " + whenText(L.date) : "";
+    var label = "听写" + (L.number || L.id) + (L.date ? ", " + fmtLong(L.date) : "") + ". Change week";
+    return '<h1 class="title-h' + (small ? " small" : "") + '"><button type="button" class="title-btn" data-act="weeks" aria-haspopup="dialog" aria-label="' + esc(label) + '">' +
+      '<span class="title-line"><span class="title" lang="zh-CN">' + esc(titleOf(L)) + '</span><span class="caret">' + CARET + "</span></span>" +
+      (when ? '<span class="title-date">' + esc(when) + "</span>" : "") + "</button></h1>";
+  }
+  /* Sticker count beside the title; opens the same week sheet. */
+  function stickerPill() {
+    var n = Object.keys(stickers()).length;
+    return '<button type="button" class="stk-pill" data-act="weeks" aria-haspopup="dialog" aria-label="' + n + (n === 1 ? " sticker" : " stickers") + '. Choose a week">' +
+      '<span class="ws-stk got">' + starFill(14) + '</span><span aria-hidden="true">' + n + "</span></button>";
+  }
+  function listHead(L, small) {
+    return (!small && L.id === nextId() ? '<span class="pill-week"><span lang="zh-CN">本周</span> This week</span>' : "") +
+      '<div class="title-row">' + titlePicker(L, small) + '<div class="title-pills">' + stickerPill() + backPill(small ? "f-back" : "") + "</div></div>";
   }
 
   /* ---------- Learn ---------- */
@@ -260,7 +243,7 @@
     if (!L) return top('<h1 class="title">听写</h1>') + '<div class="panel"><p>No spelling lists have been added yet.</p></div>';
     if (S.pic) return picView(L);
     if (S.focus) return focusView(L);
-    return top(listHead(L), weekStrip()) +
+    return top(listHead(L)) +
       '<div class="learn-bar">' + howto("点一点，听一听", "Tap a word to hear it.") +
       '<button type="button" class="onebyone" data-act="focus">' + IC.one + '<span lang="zh-CN">一个一个</span> One by one</button></div>' +
       '<div class="grid">' + L.words.map(function (w, i) { return card(w, i, "learn", "", true); }).join("") +
@@ -272,8 +255,8 @@
     var dots = ""; for (var k = 0; k < n; k++) dots += "<span" + (k === i ? ' class="on"' : "") + "></span>";
     return '<div class="focus">' +
       '<div class="f-top"><button type="button" class="f-all" data-act="unfocus">' + IC.grid + '<span class="f-all-cn" lang="zh-CN">全部</span><span class="f-all-en">All words</span></button>' +
-      '<div class="f-title"><h1 class="f-h" lang="zh-CN">' + esc(titleOf(L)) + "</h1>" + (L.date ? '<p class="f-date">' + esc(fmtShort(L.date)) + ", " + esc(whenText(L.date)) + "</p>" : "") + backPill("f-back") + "</div>" +
-      '<div class="f-pc">' + gearBtn() + pillBtn() + "</div></div>" + weekStrip() +
+      '<div class="f-title">' + listHead(L, true) + "</div>" +
+      '<div class="f-pc">' + gearBtn() + pillBtn() + "</div></div>" +
       '<div class="f-stage">' +
       '<button type="button" class="f-nav prev" data-act="fprev" aria-label="Previous word"' + (i === 0 ? " disabled" : "") + ">" + IC.chevL + "</button>" +
       '<div class="f-card t' + (i % 5) + '" data-hl="focus-' + i + '">' + BARS +
@@ -320,7 +303,7 @@
     if (D.phase === "run") return runView();
     if (D.phase === "check") return checkView();
     if (D.phase === "done") return doneView();
-    var head = L ? top(listHead(L), weekStrip()) : top('<h1 class="title" lang="zh-CN">听写</h1>');
+    var head = L ? top(listHead(L)) : top('<h1 class="title" lang="zh-CN">听写</h1>');
     if (!L) return head + '<div class="panel"><p>No list to practise yet.</p></div>';
     return head + howto("听一听，写一写", "Listen, then write it on your paper.") +
       '<div class="start"><button type="button" class="big-btn yellow start-btn" data-act="dstart">' + IC.pencil + '<span class="bb-cn" lang="zh-CN">开始听写</span><span class="bb-en">Start</span></button>' +
@@ -395,7 +378,8 @@
   /* ---------- Tricky ---------- */
   function trickyView() {
     var arr = trickyArr();
-    var h = top('<h1 class="title" lang="zh-CN">难词</h1><p class="sub">Tricky words</p>') + howto("再练一练", "Words to practise again.");
+    var L = curList();
+    var h = (L ? top(listHead(L)) : "") + '<h2 class="tricky-h"><span lang="zh-CN">难词</span> Tricky words</h2>' + howto("再练一练", "Words to practise again.");
     if (!arr.length) return h + '<div class="panel"><p class="count">No tricky words yet</p><p class="muted">Words you mark to practise again in Dictation show up here.</p></div>';
     return h + '<div class="grid">' + arr.map(function (w, i) { return card(w, i, "tricky", '<span class="miss">Missed ' + w.misses + "×</span>"); }).join("") +
       tile("tstart", IC.pencil, "练一练", "Practise these") + "</div>";
@@ -448,6 +432,48 @@
   pc.addEventListener("pointerdown", function (e) { pcDownOnBackdrop = e.target === pc; });
   pc.addEventListener("click", function (e) { if (e.target === pc && pcDownOnBackdrop) closeParent(); });
 
+  /* ---------- Week sheet: choose a list (from the title picker or sticker pill) ---------- */
+  function weeksHtml() {
+    var st = stickers(), nx = nextId(), now = new Date();
+    var rows = S.lists.map(function (l) {
+      var s = st[l.id], past = TXL.isPast(l, now);
+      var state = s ? (s.perfect ? "perfect sticker" : "sticker earned") : "no sticker yet";
+      var label = "听写" + (l.number || l.id) + ", " + (l.date ? fmtLong(l.date) : "no date") + ", " + state + (l.id === nx ? ", next test" : "");
+      return '<button type="button" class="ws-row' + (past ? " past" : "") + '" data-act="wspick" data-id="' + esc(l.id) + '" aria-pressed="' + (l.id === S.cur) + '" aria-label="' + esc(label) + '">' +
+        '<span class="ws-d" aria-hidden="true">' + esc(fmtShort(l.date) || "No date") + '</span><span class="ws-t" lang="zh-CN" aria-hidden="true">' + esc(titleOf(l)) + "</span>" +
+        (l.id === nx ? '<span class="ws-next" aria-hidden="true">Next</span>' : "") +
+        '<span class="ws-stk' + (s ? " got" + (s.perfect ? " perfect" : "") : "") + '" aria-hidden="true">' + (s ? starFill(16) : "") + "</span></button>";
+    }).join("");
+    return '<div class="pc-in"><span class="pc-grab" aria-hidden="true"></span>' +
+      '<div class="pc-head"><h2 id="ws-title"><span lang="zh-CN">选一周</span> Choose a week</h2>' +
+      '<button type="button" class="pc-x" data-act="wsclose" aria-label="Close">' + IC.close + "</button></div>" +
+      howto("点一周来练习", "Tap a week to practise it", "ws-how") + '<div class="ws-list">' + rows + "</div></div>";
+  }
+  var wsOpener = null, wsDownOnBackdrop = false;
+  function openWeeks(opener) {
+    if (ws.open) return;
+    wsOpener = opener || null; ws.innerHTML = weeksHtml();
+    if (typeof ws.showModal === "function") ws.showModal(); else ws.setAttribute("open", "");
+    /* Open scrolled to the selected week, with focus on it. */
+    var sel = ws.querySelector('.ws-row[aria-pressed="true"]') || ws.querySelector(".ws-row");
+    if (sel) {
+      sel.focus({ preventScroll: true });
+      /* rows' offsetParent is the dialog itself (position: fixed), which is also the scroll container */
+      ws.scrollTop = Math.max(0, sel.offsetTop - (ws.clientHeight - sel.offsetHeight) / 2);
+    }
+  }
+  function closeWeeks() { if (!ws.open) return; if (typeof ws.close === "function") ws.close(); else { ws.removeAttribute("open"); onWeeksClosed(); } }
+  /* Focus goes back to the title, whether the sheet was opened from it or from the sticker pill
+     (the page may have re-rendered after a pick, so find the visible one). */
+  function onWeeksClosed() {
+    wsOpener = null;
+    var t = Array.prototype.filter.call(root.querySelectorAll(".title-btn"), function (b) { return b.offsetParent !== null; })[0];
+    if (t) t.focus({ preventScroll: true });
+  }
+  ws.addEventListener("close", onWeeksClosed);
+  ws.addEventListener("pointerdown", function (e) { wsDownOnBackdrop = e.target === ws; });
+  ws.addEventListener("click", function (e) { if (e.target === ws && wsDownOnBackdrop) closeWeeks(); });
+
   /* ---------- render ---------- */
   /* Re-rendering replaces the DOM, so remember which control had focus and put focus back on its replacement. */
   function keyOf(d) { return [d.act, d.m || d.k || d.id || "", d.src || "", d.i || "", d.v || ""].join("|"); }
@@ -477,7 +503,6 @@
     else if (S.mode === "dict") v = dictView(L);
     else v = trickyView();
     root.innerHTML = appbar() + '<main class="main">' + (full ? "" : banner()) + v + "</main>";
-    placeWeekStrip();
     refocus(root, k);
     if (pc.open) renderParent();
     preloadPictures(L);
@@ -547,10 +572,17 @@
   }
   var lastPointer = "mouse";
   var ACT = {
-    pick: function (b) { if (b.dataset.id === S.cur) return; stopSpeech(); S.cur = b.dataset.id; S.fi = 0; S.pi = 0; if (S.mode === "dict") D = newDict(); render(); },
+    weeks: function (b) { openWeeks(b); },
+    wsclose: closeWeeks,
+    /* Pick a week: select it, close the sheet, stay on the same tab (Dictation goes back to its start screen). */
+    wspick: function (b) {
+      var id = b.dataset.id;
+      if (id !== S.cur) { stopSpeech(); S.cur = id; S.fi = 0; S.pi = 0; if (S.mode === "dict") D = newDict(); }
+      wsOpener = null; render(); closeWeeks();
+    },
     thisweek: function () {
       stopSpeech(); S.cur = defaultId(); S.fi = 0; S.pi = 0; if (S.mode === "dict") D = newDict(); render();
-      var c = root.querySelector('.wk[aria-pressed="true"]'); if (c) c.focus({ preventScroll: true }); /* the pill itself is gone now */
+      var c = Array.prototype.filter.call(root.querySelectorAll(".title-btn"), function (x) { return x.offsetParent !== null; })[0]; if (c) c.focus({ preventScroll: true }); /* the pill itself is gone now */
     },
     mode: function (b) { stopSpeech(); S.mode = b.dataset.m; S.focus = false; S.pic = false; S.clearArm = false; if (S.mode === "dict") D = newDict(); render(); },
     say: function (b) {
@@ -607,7 +639,7 @@
     sreset: function () { if (!S.resetArm) { S.resetArm = true; renderParent(); return; } S.resetArm = false; lsSet("tx-stickers", {}); render(); renderParent(); }
   };
   document.addEventListener("click", function (e) {
-    var b = e.target.closest("[data-act]"); if (!b || !(root.contains(b) || pc.contains(b))) return;
+    var b = e.target.closest("[data-act]"); if (!b || !(root.contains(b) || pc.contains(b) || ws.contains(b))) return;
     var a = b.dataset.act;
     if ((a !== "tclear" && S.clearArm) || (a !== "sreset" && S.resetArm)) {
       if (a !== "tclear") S.clearArm = false; if (a !== "sreset") S.resetArm = false;
@@ -619,18 +651,9 @@
   /* Keyboard shortcuts: Space = hear, ←/→ = move between words, Enter = next word in dictation.
      A focused button keeps its own Space/Enter except where noted. */
   document.addEventListener("keydown", function (e) {
-    if (pc.open || e.ctrlKey || e.metaKey || e.altKey || S.loading) return;
+    if (pc.open || ws.open || e.ctrlKey || e.metaKey || e.altKey || S.loading) return;
     var a = document.activeElement, act = a && a.dataset ? a.dataset.act : null, onBtn = !!(a && a.tagName === "BUTTON");
     var k = e.key, space = k === " " || k === "Spacebar";
-    /* ←/→ (and Home/End) move between the week chips; Enter or Space picks one. Checked first so focus mode's
-       arrows don't take over while a chip has focus. */
-    if (act === "pick" && (k === "ArrowLeft" || k === "ArrowRight" || k === "Home" || k === "End")) {
-      var chips = Array.prototype.slice.call(root.querySelectorAll(".weeks .wk")), ci = chips.indexOf(a);
-      e.preventDefault();
-      var to2 = k === "Home" ? 0 : k === "End" ? chips.length - 1 : Math.max(0, Math.min(chips.length - 1, ci + (k === "ArrowRight" ? 1 : -1)));
-      if (chips[to2]) chips[to2].focus();
-      return;
-    }
     if (S.mode === "learn" && S.pic) {
       if (k === "ArrowLeft") { e.preventDefault(); moveFocus(-1); }
       else if (k === "ArrowRight") { e.preventDefault(); moveFocus(1); }

@@ -100,36 +100,33 @@ body.full .tabs{display:none}
 @keyframes ring-fill{to{stroke-dashoffset:0}}
 @media (min-width:768px){.pc-gear{display:none}} /* the app bar's pill takes over */
 
-/* ---------- page heading ---------- */
-.top{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main gear" "strip strip";align-items:start;column-gap:12px}
+/* ---------- page heading: title picker ---------- */
+.top{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main gear";align-items:start;column-gap:12px}
 .top-main{grid-area:main;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
 .pill-week{background:var(--card);color:var(--grid-ink);font-size:13px;font-weight:700;padding:2px 12px;border-radius:999px}
 .title{margin:4px 0 0;font-family:var(--kai);font-weight:500;font-size:clamp(30px,10.5vw,42px);line-height:1.1;overflow-wrap:anywhere}
-.sub{margin:0;font-size:17px;font-weight:700}
-.date{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:16px;font-weight:600}
-.d-long{display:none}
-.when{background:var(--pencil);color:var(--on-pencil);padding:0 10px;border-radius:999px;font-size:13px;font-weight:700}
-.when.past{background:transparent;border:1.5px solid var(--line);color:var(--muted)}
-
-.title-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+.title-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.title-h{margin:0;font:inherit;min-width:0}
+/* The list title is a button: 听写（N） ▾ with the date line under it; opens the week sheet. */
+.title-btn{min-height:48px;margin:0 0 0 -10px;padding:4px 10px 6px;border:none;border-radius:18px;background:none;color:var(--ink);
+  display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;transition:background-color .15s ease}
+.title-btn:hover{background:var(--card)}
+.title-btn .title{margin:0;white-space:nowrap;font-size:clamp(26px,8.8vw,42px)} /* keep 听写（十五） on one line */
+.title-line{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.caret{flex:none;width:30px;height:30px;border-radius:50%;background:var(--card);color:var(--grid-ink);display:grid;place-items:center}
+.title-btn:hover .caret{background:var(--mint-pill)}
+.title-date{font-size:16px;font-weight:600;color:var(--muted)}
+.title-pills{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.stk-pill{min-height:48px;padding:0 16px 0 8px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);
+  display:inline-flex;align-items:center;gap:8px;font-size:18px;font-weight:800}
 .back-week{min-height:48px;padding:0 14px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--grid-ink);display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
 .back-week [lang]{font-size:15px;font-weight:800}
-
-/* Week strip: one chip per list (date, 听写 number, sticker). Scrolls sideways; full-bleed on phones. */
-.weeks{grid-area:strip;position:relative;margin:12px -20px 0;padding:12px 20px 8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none}
-.weeks::-webkit-scrollbar{display:none}
-.wk-row{display:flex;gap:8px;width:max-content}
-.wk{position:relative;flex:none;scroll-snap-align:center;min-width:66px;min-height:48px;padding:8px 10px;border-radius:16px;border:2px solid var(--row-line);
-  background:var(--card);color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:1px}
-.wk[aria-pressed="true"]{border-color:var(--grid);box-shadow:0 0 0 2px var(--grid);background:var(--row-on)}
-.wk.past{background:var(--row-past);color:var(--muted)}
-.wk.past .wk-stk{opacity:.7}
-.wk-date{font-size:13px;font-weight:700;line-height:1.15;white-space:nowrap}
-.wk-num{font-family:var(--kai);font-size:20px;line-height:1.2}
-.wk-stk{width:22px;height:22px;margin-top:3px;border-radius:50%;border:2px dashed var(--track-off);display:grid;place-items:center;color:#FFFFFF}
-.wk-stk.got{border:none;background:var(--pencil)}
-.wk-stk.perfect{box-shadow:0 0 0 3px var(--pencil-ring)}
-.wk-next{position:absolute;top:-10px;left:50%;translate:-50% 0;padding:0 8px;border-radius:999px;background:var(--pencil);color:var(--on-pencil);font-size:11px;font-weight:800;line-height:17px;white-space:nowrap}
+/* Sticker marks (sticker pill and week sheet rows): gold = earned, ring = perfect, dashed = not yet */
+.ws-stk{flex:none;width:28px;height:28px;border-radius:50%;border:2px dashed var(--track-off);display:grid;place-items:center;color:#FFFFFF}
+.ws-stk.got{border:none;background:var(--pencil)}
+.ws-stk.perfect{box-shadow:0 0 0 3px var(--pencil-ring)}
+.tricky-h{margin:18px 0 0;font-size:18px;font-weight:800}
+.tricky-h [lang]{font-family:var(--kai);font-weight:500;font-size:26px}
 
 .howto{margin:16px 0 14px;font-size:15px;font-weight:600;color:var(--muted)}
 .howto-cn{font-family:var(--kai);font-size:20px;font-weight:500;color:var(--ink)}
@@ -137,18 +134,14 @@ body.full .tabs{display:none}
 @media (min-width:768px){
   .top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
   .pill-week{font-size:14px;padding:3px 14px}
-  .title{margin-top:8px;font-size:56px}
-  .date{font-size:18px;gap:4px 10px}
-  .d-short{display:none}.d-long{display:inline}
-  .when{font-size:14px;padding:0 12px}
-  .top-main{flex:1 1 auto}
-  .weeks{flex:0 0 100%;margin:4px 0 0;padding:12px 6px 10px;scrollbar-width:thin}
-  .weeks::-webkit-scrollbar{display:block;height:8px}
-  .wk{min-width:76px;padding:9px 12px}
-  .wk-date{font-size:14px}
-  .wk-num{font-size:22px}
+  .title,.title-btn .title{font-size:56px}
+  .title-btn{margin-top:4px}
+  .title-date{font-size:18px}
+  .caret{width:36px;height:36px}
+  .title-row{gap:6px 14px}
   .howto{margin:22px 0 18px;font-size:16px}
   .howto-cn{font-size:22px}
+  .tricky-h{margin-top:22px}
 }
 
 /* ---------- word cards with 田字格 ---------- */
@@ -242,6 +235,21 @@ body.full .tabs{display:none}
 .share-ic{display:inline-block;vertical-align:-3px;color:var(--good)}
 .pc-clear{min-height:44px;border:none;background:none;font-size:15px;font-weight:700;color:var(--danger-text)}
 .pc-clear:disabled{color:var(--muted)}
+
+/* Week sheet ("选一周 Choose a week"): same sheet/dialog as the Parent corner, one row per list */
+.ws .pc-head h2{margin:0;font-size:22px;font-weight:800;line-height:1.2}
+.ws .pc-head h2 [lang]{font-family:var(--kai);font-weight:500;font-size:28px}
+.ws-how{margin:0}
+.ws-list{display:flex;flex-direction:column;gap:8px;padding:2px}
+.ws-row{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 14px 6px 16px;border-radius:16px;border:2px solid var(--row-line);
+  background:var(--card);color:var(--ink);text-align:left}
+.ws-row[aria-pressed="true"]{border-color:var(--grid);box-shadow:0 0 0 2px var(--grid);background:var(--row-on)}
+.ws-row.past{background:var(--row-past);color:var(--muted)}
+.ws-row.past .ws-stk{opacity:.75}
+.ws-d{flex:none;min-width:76px;font-size:15px;font-weight:700;white-space:nowrap}
+.ws-t{flex:1;min-width:0;font-family:var(--kai);font-size:20px;line-height:1.2;white-space:nowrap}
+@media (min-width:768px){.ws-d{min-width:88px}.ws-t{font-size:22px}}
+.ws-next{flex:none;padding:0 10px;border-radius:999px;background:var(--pencil);color:var(--on-pencil);font-size:12px;font-weight:800;line-height:20px}
 @media (min-width:768px){
   .pc{margin:auto;width:calc(100% - 64px);max-width:560px;max-height:calc(100dvh - 64px);border-radius:28px}
   .pc-grab{display:none}
@@ -389,11 +397,12 @@ body.full .main{max-width:none;padding:0}
 .f-all-cn{font-size:18px;font-weight:800}
 .f-all-en{font-size:15px;font-weight:600;color:var(--muted)}
 .f-title{grid-area:title;text-align:center;line-height:1.1}
-.f-h{margin:0;font-family:var(--kai);font-weight:500;font-size:30px}
-.f-date{margin:2px 0 0;font-size:15px;font-weight:600;color:var(--muted)}
+.f-title .title-row{justify-content:center}
+.f-title .title-btn{margin:0;align-items:center;text-align:center}
+.title-h.small .title{font-size:30px}
+.title-h.small .caret{width:26px;height:26px}
+.title-h.small .title-date{font-size:15px}
 .f-pc{grid-area:pc}
-.f-back{margin-top:6px}
-.focus .weeks{margin:0 -16px;padding:12px 16px 6px}
 .f-stage{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"card card" "prev next";align-items:center;align-content:center;gap:16px;touch-action:pan-y}
 .f-nav{width:64px;height:64px;border-radius:50%;border:none;display:grid;place-items:center;box-shadow:0 4px 0 var(--lift)}
 .f-nav.prev{grid-area:prev;justify-self:start;background:var(--card);color:var(--ink)}
@@ -432,9 +441,7 @@ body.full .main{max-width:none;padding:0}
   .f-all{justify-self:start;min-height:52px}
   .f-pc{justify-self:end}
   .f-pc .pc-btn.pill{min-height:52px;border:none}
-  .focus .weeks{margin:0;padding:12px 6px 6px}
-  .focus .wk-row{margin:0 auto}
-  .f-h{font-size:34px}
+  .title-h.small .title{font-size:34px}
   .f-stage{grid-template-columns:auto minmax(0,640px) auto;grid-template-areas:"prev card next";justify-content:center;gap:40px}
   .f-nav{width:84px;height:84px}
   .f-card{--fmax:200px;padding:30px 30px 34px;border-radius:40px}
