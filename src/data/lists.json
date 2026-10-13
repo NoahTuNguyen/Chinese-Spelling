@@ -8,27 +8,32 @@
         {
           "hanzi": "空气",
           "pinyin": "kōng qì",
-          "english": "air"
+          "english": "air",
+          "pic": "🎈"
         },
         {
           "hanzi": "岩石",
           "pinyin": "yán shí",
-          "english": "rock"
+          "english": "rock",
+          "pic": "🪨"
         },
         {
           "hanzi": "树林",
           "pinyin": "shù lín",
-          "english": "woods"
+          "english": "woods",
+          "pic": "🌲"
         },
         {
           "hanzi": "草地",
           "pinyin": "cǎo dì",
-          "english": "grass, lawn"
+          "english": "grass, lawn",
+          "pic": "🌿"
         },
         {
           "hanzi": "花园",
           "pinyin": "huā yuán",
-          "english": "garden"
+          "english": "garden",
+          "pic": "🌷"
         }
       ]
     },
@@ -40,27 +45,32 @@
         {
           "hanzi": "星星",
           "pinyin": "xīng xing",
-          "english": "stars"
+          "english": "stars",
+          "pic": "⭐"
         },
         {
           "hanzi": "月亮",
           "pinyin": "yuè liàng",
-          "english": "moon"
+          "english": "moon",
+          "pic": "🌙"
         },
         {
           "hanzi": "彩虹",
           "pinyin": "cǎi hóng",
-          "english": "rainbow"
+          "english": "rainbow",
+          "pic": "🌈"
         },
         {
           "hanzi": "太阳",
           "pinyin": "tài yáng",
-          "english": "sun"
+          "english": "sun",
+          "pic": "☀️"
         },
         {
           "hanzi": "下雨",
           "pinyin": "xià yǔ",
-          "english": "raining"
+          "english": "raining",
+          "pic": "🌧️"
         }
       ]
     },
@@ -72,27 +82,32 @@
         {
           "hanzi": "郊外",
           "pinyin": "jiāo wài",
-          "english": "countryside"
+          "english": "countryside",
+          "pic": "🏞️"
         },
         {
           "hanzi": "乌云",
           "pinyin": "wū yún",
-          "english": "dark clouds"
+          "english": "dark clouds",
+          "pic": "☁️"
         },
         {
           "hanzi": "打伞",
           "pinyin": "dǎ sǎn",
-          "english": "open an umbrella"
+          "english": "open an umbrella",
+          "pic": "☂️"
         },
         {
           "hanzi": "刮风",
           "pinyin": "guā fēng",
-          "english": "windy"
+          "english": "windy",
+          "pic": "🌬️"
         },
         {
           "hanzi": "闪电",
           "pinyin": "shǎn diàn",
-          "english": "lightning"
+          "english": "lightning",
+          "pic": "⚡"
         }
       ]
     },
@@ -104,27 +119,32 @@
         {
           "hanzi": "晴朗",
           "pinyin": "qíng lǎng",
-          "english": "sunny, clear"
+          "english": "sunny, clear",
+          "pic": "🌞"
         },
         {
           "hanzi": "寒冷",
           "pinyin": "hán lěng",
-          "english": "cold"
+          "english": "cold",
+          "pic": "❄️"
         },
         {
           "hanzi": "炎热",
           "pinyin": "yán rè",
-          "english": "very hot"
+          "english": "very hot",
+          "pic": "🥵"
         },
         {
           "hanzi": "日历",
           "pinyin": "rì lì",
-          "english": "calendar"
+          "english": "calendar",
+          "pic": "📅"
         },
         {
           "hanzi": "时间",
           "pinyin": "shí jiān",
-          "english": "time"
+          "english": "time",
+          "pic": "⏰"
         }
       ]
     },
@@ -136,27 +156,32 @@
         {
           "hanzi": "月球",
           "pinyin": "yuè qiú",
-          "english": "the moon"
+          "english": "the moon",
+          "pic": "🌕"
         },
         {
           "hanzi": "地球",
           "pinyin": "dì qiú",
-          "english": "Earth"
+          "english": "Earth",
+          "pic": "🌏"
         },
         {
           "hanzi": "彗星",
           "pinyin": "huì xīng",
-          "english": "comet"
+          "english": "comet",
+          "pic": "☄️"
         },
         {
           "hanzi": "海王星",
           "pinyin": "hǎi wáng xīng",
-          "english": "Neptune"
+          "english": "Neptune",
+          "pic": "🪐"
         },
         {
           "hanzi": "天王星",
           "pinyin": "tiān wáng xīng",
-          "english": "Uranus"
+          "english": "Uranus",
+          "pic": "🪐"
         }
       ]
     },
@@ -168,27 +193,32 @@
         {
           "hanzi": "环保",
           "pinyin": "huán bǎo",
-          "english": "protect the environment"
+          "english": "protect the environment",
+          "pic": "♻️"
         },
         {
           "hanzi": "宇宙",
           "pinyin": "yǔ zhòu",
-          "english": "universe"
+          "english": "universe",
+          "pic": "🌌"
         },
         {
           "hanzi": "用水",
           "pinyin": "yòng shuǐ",
-          "english": "use water"
+          "english": "use water",
+          "pic": "💧"
         },
         {
           "hanzi": "环境",
           "pinyin": "huán jìng",
-          "english": "environment"
+          "english": "environment",
+          "pic": "🌍"
         },
         {
           "hanzi": "垃圾",
           "pinyin": "lā jī",
-          "english": "rubbish"
+          "english": "rubbish",
+          "pic": "🗑️"
         }
       ]
     },
@@ -200,27 +230,32 @@
         {
           "hanzi": "夜空",
           "pinyin": "yè kōng",
-          "english": "night sky"
+          "english": "night sky",
+          "pic": "🌃"
         },
         {
           "hanzi": "神话",
           "pinyin": "shén huà",
-          "english": "myth"
+          "english": "myth",
+          "pic": "🐉"
         },
         {
           "hanzi": "航天",
           "pinyin": "háng tiān",
-          "english": "space travel"
+          "english": "space travel",
+          "pic": "🚀"
         },
         {
           "hanzi": "外星人",
           "pinyin": "wài xīng rén",
-          "english": "alien"
+          "english": "alien",
+          "pic": "👽"
         },
         {
           "hanzi": "望远镜",
           "pinyin": "wàng yuǎn jìng",
-          "english": "telescope"
+          "english": "telescope",
+          "pic": "🔭"
         }
       ]
     }

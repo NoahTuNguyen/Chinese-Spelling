@@ -6,6 +6,8 @@ from pathlib import Path
 PATH = Path(__file__).resolve().parent.parent / "src" / "data" / "lists.json"
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 HAN = re.compile(r"[\u3400-\u9fff]")
+# Optional "pic": one emoji (a few code points at most, e.g. "\u2600\ufe0f" or "\ud83c\udf27\ufe0f"), no letters, digits or spaces.
+PIC_BAD = re.compile(r"[\sA-Za-z0-9\u3400-\u9fff]")
 errors = []
 
 try:
@@ -41,6 +43,10 @@ for n, l in enumerate(lists):
                 errors.append(f"{where} word {i + 1}: missing {f}")
         if w.get("hanzi") and not HAN.search(w["hanzi"]):
             errors.append(f"{where} word {i + 1}: hanzi has no Chinese characters")
+        if "pic" in w:
+            pic = w["pic"]
+            if not isinstance(pic, str) or not pic or len(pic) > 8 or PIC_BAD.search(pic):
+                errors.append(f"{where} word {i + 1}: pic must be a single emoji (or leave it out)")
 
 if errors:
     print("\n".join(errors))
