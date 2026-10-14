@@ -32,6 +32,11 @@ open a shared link, tap a word to hear it in Mandarin, and run a mock dictation.
   `TEST_DAY_CUTOFF_HOUR` (loaded before app.js as `window.TXLists`; also `require`-able in Node)
 - `scripts/validate_lists.py` — checks lists.json; CI runs it before deploying
 - `scripts/test_default_list.js` — checks `pickDefaultList` (`node scripts/test_default_list.js`)
+- `src/vendor/hanzi-writer/` — Hanzi Writer 3.7.3 (MIT), unmodified minified build + LICENSE.txt +
+  VERSION (sha256). Loaded by a `<script>` tag; create writers only via `hanziWriter()` in app.js
+  (its `charDataLoader` reads the local stroke files; the library's default would use a CDN).
+- `src/vendor/hanzi-writer-data/` — stroke JSON for ONLY the characters in the lists (+ ARPHICPL.TXT),
+  from hanzi-writer-data 2.0.1 via `scripts/fetch_strokes.py`. The validator fails if one is missing.
 
 ## Run locally
 ```
@@ -136,6 +141,8 @@ When the user gives photos of a 听写 sheet:
    the rest of the word (e.g. not 雪 for 雨 in 下雨, because 下雪 is a word). The validator
    requires an entry for every character and rejects swaps that spell another list word.
    Show the new entries in a table for review before committing.
+   Run `python3 scripts/fetch_strokes.py` to download stroke data for the new characters
+   (it only fetches what's missing) and commit the new `src/vendor/hanzi-writer-data/*.json`.
 6. Write one Gemini image line per word for the user to generate
    (`Image: <scene description>. One picture only, no text.`), naming the file each one
    becomes (`src/img/<toneless-pinyin>.webp`) and avoiding look-alikes within the list.
@@ -204,7 +211,8 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
     motion: a still row that fades in. Score = rounds right on the first tap.
 - Parent corner: `<dialog>`; press-and-hold 1.5 s on touch, click/keyboard elsewhere.
   Holds the Pinyin/Pictures/English/Slow voice + Sounds/Dark theme switches, how it
-  works, Add to Home Screen tip (phones/tablets), clear tricky words, reset stickers.
+  works, Add to Home Screen tip (phones/tablets), Credits (Hanzi Writer MIT, stroke data Arphic
+  Public License, links to both licence files), clear tricky words, reset stickers.
 - Every screen has one short `.howto` line (bilingual on kid screens); keep them accurate
   when changing a flow. Labels are simple Chinese + small English.
 - Keyboard: Space hears, ←/→ move between words, Enter is next in dictation. Visible

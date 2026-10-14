@@ -129,6 +129,8 @@ Contents:
 - How it works (short paragraph) + on iPhone/iPad: "Add to Home Screen so stickers
   aren't cleared" with brief steps.
 - Clear tricky words on this device (two-tap confirm). Optionally Reset stickers.
+- Credits: Hanzi Writer (MIT) and the stroke data (Make Me a Hanzi / Arphic Technology, Arphic
+  Public License), with links to both licence files.
 - Real dialog semantics: focus trap, Esc closes, close button.
 
 **6 Focus mode.** One word at a time: picture, huge 田字格, pinyin, yellow 听一听 Listen.
@@ -225,6 +227,38 @@ Wrong bubble: wobble + boop, turns grey and keeps floating. 🔊 replays the wor
 buttons (Tab/Enter, keys 1–4). `requestAnimationFrame` + transforms; paused while the tab is
 hidden. Reduced motion: bubbles sit still in a row and fade in. Score = rounds right on the first
 tap. How-to: 听一听，戳泡泡 · Listen, then pop the right bubble.
+
+**Stroke order (Hanzi Writer), self-hosted.** Hanzi Writer 3.7.3 (MIT) lives in
+`src/vendor/hanzi-writer/` (unmodified minified UMD build, its `LICENSE.txt`, a `VERSION` file with
+the SHA-256) and is loaded with a normal `<script>` tag from our own domain. Stroke data for only
+the characters in the lists is in `src/vendor/hanzi-writer-data/<char>.json` (from
+hanzi-writer-data 2.0.1, via `scripts/fetch_strokes.py`), with its licence `ARPHICPL.TXT`. Every
+writer is created through `hanziWriter()` in app.js, whose `charDataLoader` fetches from that local
+folder, so nothing loads from another domain. The validator requires a stroke file for every
+character. Parent corner → Credits: "Stroke order: Hanzi Writer (MIT). Stroke data: Make Me a
+Hanzi / Arphic Technology, Arphic Public License." with links to both licence files.
+
+**14 写一写 Write (Learn).** A 写一写 Write button on the picture card and in focus mode opens the
+Write view for that word, one character at a time. Each character sits in a large 田字格 box (the
+grid is drawn behind the Hanzi Writer SVG): about 300 px on phones, 420 px on iPad, never
+overflowing. Colours from tokens: strokes `--ink`, outline light grey, highlight `--pencil`,
+correct stroke `--grid`. Three steps with big buttons: 1 看一看 Watch (stroke-order animation,
+replay, slow speed); 2 描一描 Trace (quiz with the outline visible, hint after 2 misses);
+3 写一写 Write (quiz with no outline, hint after 3 misses). Pinyin, a 🔊 button for the word,
+prev/next character and next word. Only the drawing box disables page scroll and zoom
+(`touch-action: none`), so finger and Apple Pencil strokes don't move the page. Quiz leniency a
+little above default (1.3) for young children. How-to: 看一看，描一描，写一写 · Watch, trace, then
+write.
+
+**15 写一写 Write it (Play).** Game card after 泡泡: 写一写 Write it — Hear the word, write it. Every
+word in the list once, random order; the word is spoken at the start (🔊 replays it). Empty 田字格
+boxes show how many characters; each character is written in quiz mode with NO outline. After 3
+misses the outline shows briefly as a hint; 💡 提示 plays the stroke-order animation once. A
+character counts as correct when written with no hints and ≤ 2 missed strokes. After each word the
+whole word is shown with pinyin and a chime. End screen like the other games: stars = words fully
+correct, 再玩一次 Play again / 回到游戏 Back to games. Characters that needed hints go to Tricky
+words (their word). Best score per list in `tx-games`. How-to: 听一听，写一写 · Listen, then write
+the word.
 
 ## Data changes (`src/data/lists.json`)
 Add an optional `pic` per word: a single emoji used as the picture, e.g.
