@@ -227,6 +227,16 @@ Enter = next in dictation. Visible focus ring (`--grid`, 4 px) on the focused ca
 选一个游戏 · Pick a game, then one card per game from a registry (`GAMES` in app.js) so more
 games can be added. Each card: picture, Chinese + English name, one-line description, and a
 note pill ("Best this week: 4 / 5", "5 pictures to play", or why it can't be played).
+The cards are grouped under three headings, each a `<section>` labelled by its `<h2>` (the Chinese
+character in a small green 田字格-style box + English):
+- 听 Listen: 听音选字, 泡泡, 接一接
+- 认 Read: 看图选词, 翻翻乐, 句子填空, 小故事
+- 写 Write: 缺字, 找错字, 写一写
+
+A game's card appears only once the game is built (`GROUPS` lists ids; ids not in `GAMES` are
+skipped). Under 600 px the cards are compact, two per row: picture on top (16:10), then the Chinese
+and English names and the note pill; the one-line description is hidden. Wider screens keep the
+picture-left cards, `auto-fill` columns of at least 340 px. Tab order follows the groups.
 
 **9 看图选词 Picture quiz.** Uses the selected list. Questions = every word with an `img`, once
 each, random order; words without `img` are skipped. Fewer than 3 pictures → the card says
@@ -250,7 +260,7 @@ each, random order; words without `img` are skipped. Fewer than 3 pictures → t
   Buttons 再玩一次 Play again (new order and choices), 回到游戏 Back to games. Words not right
   first time go to Tricky (same rules as dictation).
 
-**Shared game engine (all Play games).** Game picker order: 看图选词, 听音选字, 缺字, 翻翻乐, 泡泡.
+**Shared game engine (all Play games).** Game picker groups and order: see 8.
 Every game uses the selected list; wrong-answer choices come from the same list and are topped up
 from the nearest other lists (by date) only when the list is too short. Same feedback as the
 Picture quiz (right: `--good` blue, tick, bounce, chime, word spoken; wrong: soft boop, wobble,

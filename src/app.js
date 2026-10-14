@@ -569,6 +569,12 @@
     if (picks.length < 2) otherWords(L, [w.hanzi], 12).forEach(function (o) { fromWords([o]); });
     return shuffle([ans].concat(picks));
   }
+  /* Picker groups, in order. Ids not in GAMES yet are skipped. */
+  var GROUPS = [
+    { id: "listen", cn: "听", en: "Listen", games: ["listenPick", "bubbles", "catchIt"] },
+    { id: "read", cn: "认", en: "Read", games: ["pictureQuiz", "memory", "sentenceFill", "story"] },
+    { id: "write", cn: "写", en: "Write", games: ["missingChar", "spotMistake", "writeIt"] }
+  ];
   function gameById(id) { for (var i = 0; i < GAMES.length; i++) if (GAMES[i].id === id) return GAMES[i]; return null; }
   function curGame() { return gameById(G.game); }
   function focusGameCard(id) { var c = root.querySelector('.game-card[data-g="' + id + '"]') || root.querySelector(".game-card"); if (c) c.focus({ preventScroll: true }); }
@@ -585,15 +591,21 @@
     var head = L ? top(listHead(L)) : top('<h1 class="title" lang="zh-CN">玩一玩</h1>');
     if (!L) return head + '<div class="panel"><p>No spelling lists have been added yet.</p></div>';
     var scores = gameScores(), thisWeek = L.id === nextId();
-    var cards = GAMES.map(function (g) {
+    function card(g) {
       var n = g.items(L).length, ok = n >= g.min, sc = scores[g.id] && scores[g.id][L.id];
       var note = !ok ? g.notEnough : sc ? (g.bestText ? g.bestText(sc, thisWeek) : (thisWeek ? "Best this week: " : "Best for this list: ") + sc.best + " / " + sc.total) : g.ready(n);
       return '<button type="button" class="game-card g-' + g.id + (ok ? "" : " off") + '" data-act="gstart" data-g="' + g.id + '"' + (ok ? "" : ' aria-disabled="true"') + ">" +
         '<span class="gc-art" aria-hidden="true">' + g.art(L) + "</span>" +
         '<span class="gc-text"><span class="gc-cn" lang="zh-CN">' + g.cn + '</span><span class="gc-en">' + g.en + '</span><span class="gc-sub">' + g.sub + "</span>" +
         '<span class="gc-note' + (ok ? "" : " warn") + '">' + esc(note) + "</span></span></button>";
+    }
+    /* Grouped under 听 Listen / 认 Read / 写 Write; a game shows only once it is in GAMES (built). */
+    var groups = GROUPS.map(function (gr) {
+      var gs = gr.games.map(gameById).filter(Boolean); if (!gs.length) return "";
+      return '<section class="g-group" aria-labelledby="gg-' + gr.id + '"><h2 class="gg-h" id="gg-' + gr.id + '"><span class="gg-box" lang="zh-CN">' + gr.cn + "</span>" + gr.en + "</h2>" +
+        '<div class="games">' + gs.map(card).join("") + "</div></section>";
     }).join("");
-    return head + howto("选一个游戏", "Pick a game") + '<div class="games">' + cards + "</div>";
+    return head + howto("选一个游戏", "Pick a game") + groups;
   }
   /* Start (or restart) a round of game id on the selected list. */
   /* setup = true: games with a start screen (Bubble pop's speed choice) show it first. */

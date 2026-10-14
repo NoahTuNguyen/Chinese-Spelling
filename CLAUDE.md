@@ -232,8 +232,11 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   Write → a Write session over the list),
   Dictation (Hear again, empty 田字格, Next), Check your paper (two faces per word; Done
   once all are marked), Well done (stars scaled to 5, sticker + sticker book), Tricky.
-- Play: game picker built from the `GAMES` registry in app.js; picker order 看图选词, 听音选字,
-  缺字, 翻翻乐, 泡泡, 写一写 (see docs/design/README.md). Shared engine (`G` state): `startGame`,
+- Play: game picker built from the `GAMES` registry in app.js, grouped by `GROUPS` under three
+  headings (`<section>` + `<h2>`, a Kai character in a green box): 听 Listen (听音选字, 泡泡, 接一接),
+  认 Read (看图选词, 翻翻乐, 句子填空, 小故事), 写 Write (缺字, 找错字, 写一写). An id in `GROUPS` that
+  isn't in `GAMES` yet is skipped, so a new game shows once it's registered. Under 600px the cards
+  are compact, two per row (picture on top, no description line) (see docs/design/README.md). Shared engine (`G` state): `startGame`,
   `gameTop` (✕, dots, "2 / 5"), `choiceView`/`gamePick`/`gameNext` for choice games (a game
   supplies `build`, `media`, `onShow`, `how`, `hint`), `gameFinish`/`gameEndView`, `saveBest`,
   distractors via `otherWords` (same list first, then nearest lists). Right = blue + tick +
