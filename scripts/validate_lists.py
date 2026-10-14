@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Validate src/data/lists.json before deploy. Exits non-zero on any problem; words without a picture only warn."""
-import json, re, sys
+import json, re, sys, unicodedata
 from pathlib import Path
 
 # Messages include Chinese words; don't crash on consoles/pipes that default to a legacy encoding (Windows).
@@ -17,6 +17,13 @@ HAN = re.compile(r"[\u3400-\u9fff]")
 # Optional "pic": one emoji (a few code points at most, e.g. "\u2600\ufe0f" or "\ud83c\udf27\ufe0f"), no letters, digits or spaces.
 PIC_BAD = re.compile(r"[\sA-Za-z0-9\u3400-\u9fff]")
 errors, warnings = [], []
+
+
+def has_pinyin(sentence_py, word_py):
+    """True if the word's pinyin appears in the sentence pinyin as whole syllables (case and spacing ignored)."""
+    norm = lambda t: " ".join(unicodedata.normalize("NFC", t).lower().split())
+    return re.search(r"(?<![^\W\d_])" + re.escape(norm(word_py)) + r"(?![^\W\d_])", norm(sentence_py)) is not None
+
 
 try:
     data = json.loads(PATH.read_text(encoding="utf-8"))
@@ -67,6 +74,18 @@ for n, l in enumerate(lists):
                 errors.append(f"{where} word {i + 1}: img file not found: src/{img}")
         elif "img" not in w:
             warnings.append(f"{where} word {i + 1} ({w.get('hanzi', '?')}): no img yet (the emoji pic is shown instead)")
+        # 句子填空 Sentence fill-in blanks the word in its sentence and its syllables in the pinyin line.
+        sent, spy, hz = w.get("sentence"), w.get("sentencePinyin"), w.get("hanzi", "")
+        if isinstance(sent, str) and sent.strip() and hz:
+            found = sent.count(hz)
+            if found != 1:
+                errors.append(f"{where} word {i + 1} ({hz}): sentence must contain {hz} exactly once (found {found})")
+            if not (isinstance(spy, str) and spy.strip()):
+                errors.append(f"{where} word {i + 1} ({hz}): sentence needs a sentencePinyin")
+            elif not has_pinyin(spy, w.get("pinyin", "")):
+                errors.append(f"{where} word {i + 1} ({hz}): sentencePinyin must contain the word's pinyin '{w.get('pinyin')}'")
+        elif isinstance(spy, str) and spy.strip():
+            errors.append(f"{where} word {i + 1} ({hz}): sentencePinyin without a sentence")
 
 # ---- lookalikes.json (缺字 Missing character game) ----
 # Every character in every word needs an entry: 2–4 single Chinese characters, no duplicates, not the
@@ -119,4 +138,4 @@ for m in warnings:
 if errors:
     print("\n".join(errors))
     sys.exit(1)
-print(f"OK: {len(lists)} lists, {sum(len(l['words']) for l in lists)} words, {sum(1 for l in lists for w in l['words'] if w.get('img'))} pictures, {len(look)} look-alike entries, {len(used)} characters with stroke data")
+print(f"OK: {len(lists)} lists, {sum(len(l['words']) for l in lists)} words, {sum(1 for l in lists for w in l['words'] if w.get('img'))} pictures, {sum(1 for l in lists for w in l['words'] if w.get('sentence'))} sentences, {len(look)} look-alike entries, {len(used)} characters with stroke data")
