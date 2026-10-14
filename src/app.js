@@ -816,6 +816,24 @@
       '<button type="button" class="big-btn white" data-act="gback"><span class="bb-cn" lang="zh-CN">回到游戏</span><span class="bb-en">Back to games</span></button></div></div>';
   }
 
+  /* ---------- Hanzi Writer (stroke order), self-hosted ---------- */
+  /* Stroke data comes only from our own copy, vendor/hanzi-writer-data/<char>.json (scripts/fetch_strokes.py);
+     Hanzi Writer's default loader would fetch from a CDN, so every writer is created through hanziWriter(). */
+  var strokeCache = {};
+  function strokeLoader(ch, onLoad, onError) {
+    if (strokeCache[ch]) { onLoad(strokeCache[ch]); return; }
+    fetch("vendor/hanzi-writer-data/" + encodeURIComponent(ch) + ".json")
+      .then(function (r) { if (!r.ok) throw new Error("stroke data " + r.status); return r.json(); })
+      .then(function (d) { strokeCache[ch] = d; onLoad(d); })
+      .catch(function (e) { if (onError) onError(e); });
+  }
+  function hanziWriter(el, ch, opts) {
+    if (!window.HanziWriter) return null;
+    var o = {}; for (var k in opts || {}) o[k] = opts[k];
+    o.charDataLoader = strokeLoader;
+    return window.HanziWriter.create(el, ch, o);
+  }
+
   /* ---------- sound effects (Web Audio, no files; Parent corner → Sounds) ---------- */
   var AC = null;
   function audioCtx() {
@@ -857,6 +875,10 @@
       sw("py", "Pinyin") + sw("pics", "Pictures") + sw("en", "English") + sw("slow", "Slow voice") + "</div></section>" +
       '<section class="pc-sec" aria-labelledby="pc-h-screen"><h3 id="pc-h-screen">Sound and screen</h3><div class="sw-grid">' + sw("sound", "Sounds") + sw("dark", "Dark theme") + "</div></section>" +
       '<div class="pc-tip"><b>How it works</b><p>Learn: tap a word to hear it. Dictation: each word plays twice; she writes on paper, then checks with the faces. Missed words go to Tricky.</p></div>' + homeTip() +
+      '<section class="pc-sec pc-credits" aria-labelledby="pc-h-credits"><h3 id="pc-h-credits">Credits</h3>' +
+      "<p>Stroke order: Hanzi Writer (MIT). Stroke data: Make Me a Hanzi / Arphic Technology, Arphic Public License.</p>" +
+      '<p class="pc-links"><a href="vendor/hanzi-writer/LICENSE.txt" target="_blank" rel="noopener">Hanzi Writer licence (MIT)</a>' +
+      '<a href="vendor/hanzi-writer-data/ARPHICPL.TXT" target="_blank" rel="noopener">Arphic Public License</a></p></section>' +
       '<div class="pc-danger"><button type="button" class="pc-clear" data-act="tclear"' + (nt ? "" : " disabled") + ">" +
       (!nt ? "No tricky words on this device" : S.clearArm ? "Tap again to clear " + nt + " tricky word" + (nt === 1 ? "" : "s") : "Clear tricky words on this device") + "</button>" +
       (ns ? '<button type="button" class="pc-clear" data-act="sreset">' + (S.resetArm ? "Tap again to remove " + ns + " sticker" + (ns === 1 ? "" : "s") : "Reset stickers") + "</button>" : "") + "</div></div>";

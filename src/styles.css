@@ -236,6 +236,9 @@ body.full .tabs{display:none}
 .pc-tip.home{background:var(--row-on)}
 .pc-tip p b{display:inline;font-weight:800}
 .share-ic{display:inline-block;vertical-align:-3px;color:var(--good)}
+.pc-credits p{margin:0 0 6px;font-size:13px;font-weight:500;color:var(--muted);line-height:1.45}
+.pc-links{display:flex;flex-wrap:wrap;gap:4px 12px}
+.pc-links a{min-height:44px;display:inline-flex;align-items:center;color:var(--grid-ink);font-weight:700;text-underline-offset:3px}
 .pc-clear{min-height:44px;border:none;background:none;font-size:15px;font-weight:700;color:var(--danger-text)}
 .pc-clear:disabled{color:var(--muted)}
 
