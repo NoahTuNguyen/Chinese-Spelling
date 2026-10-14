@@ -35,7 +35,7 @@
   var D = newDict();
   /* Play tab: phase picker → run → end. q = questions { w, choices[], firstTry }, i = current question,
      wrong = choice indexes tried and wrong, solved = answered right, hint = pinyin shown, anim = one-off animation. */
-  function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null }; }
+  function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null, ci: 0, strokes: 0, cm: 0, ch: false, busy: false }; }
   var G = newGame(), gTimer = null;
   var TOKEN = 0;
   /* Set just before the first render: voice detection can finish while this script is still starting up
@@ -507,7 +507,15 @@
         }
         return rounds;
       },
-      onShow: function (q) { sayWordSoon(q.w, 300); } }
+      onShow: function (q) { sayWordSoon(q.w, 300); } },
+    { id: "writeIt", cn: "写一写", en: "Write it", sub: "Hear the word, write it", kind: "write",
+      how: ["听一听，写一写", "Listen, then write the word"], region: "Write the word you heard",
+      items: function (L) { return L ? L.words : []; }, min: 1,
+      notEnough: "This week has no words yet", ready: function (n) { return n + " words to write"; },
+      art: function () { return '<span class="gc-miss gc-write"><span class="boxes"><span class="tzg"><span>写</span></span></span>' + IC.pencil + "</span>"; },
+      /* Each word once, in random order. done[k] = { ok, helped } for each character once it's written. */
+      build: function (L) { return shuffle(L.words).map(function (w) { return { w: w, chars: Array.from(w.hanzi), done: [], firstTry: false, helped: false }; }); },
+      onShow: function (q) { sayWordSoon(q.w, 400); } }
   ];
   /* 缺字 look-alikes (data/lookalikes.json): character → [most common mix-up, others…]. */
   var LOOK = {};
@@ -540,6 +548,7 @@
     if (G.phase === "run" && g && g.kind === "memory") return memoryView(g);
     if (G.phase === "setup" && g && g.kind === "bubbles") return bubbleSetupView(g);
     if (G.phase === "run" && g && g.kind === "bubbles") return bubbleView(g);
+    if (G.phase === "run" && g && g.kind === "write") return writeGameView(g);
     if (G.phase === "run" && g) return choiceView(g);
     if (G.phase === "end" && g) return gameEndView(g);
     var head = L ? top(listHead(L)) : top('<h1 class="title" lang="zh-CN">玩一玩</h1>');
@@ -571,7 +580,7 @@
     if (g.kind === "memory") { G.mm = g.build(L); G.q = []; }
     else G.q = g.build(L);
     render(); toTop(); /* render() also starts the bubbles */
-    var p = root.querySelector(".g-choice, .mm-card, .bub"); if (p) p.focus({ preventScroll: true });
+    var p = root.querySelector(".g-choice, .mm-card, .bub, .g-writeIt .g-say"); if (p) p.focus({ preventScroll: true });
     if (g.onShow) g.onShow(G.q[0]);
   }
 
@@ -836,7 +845,7 @@
     o.charDataLoader = strokeLoader;
     return window.HanziWriter.create(el, ch, o);
   }
-  /* The one live writer (the Write tool). render() mounts it into .hw-target; anything else drops it. */
+  /* The one live writer (Write tool or Write it game). render() mounts it into .hw-target; anything else drops it. */
   var WR = null, wrSize = 0;
   function dropWriter() { if (WR) { try { WR.cancelQuiz(); } catch (e) {} WR = null; } }
   function tokenColor(name, fallback) { var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fallback; }
@@ -895,6 +904,7 @@
   }
   function mountWriterForView() {
     if (S.mode === "learn" && S.write) mountWrite();
+    else if (S.mode === "play" && G.phase === "run" && G.game === "writeIt" && !G.solved) mountGameWriter();
   }
   function openWrite(wi) {
     stopSpeech();
@@ -918,6 +928,95 @@
     else { closeWrite(); return; }
     wv.step = "watch"; stopSpeech(); render();
     if (d > 0 && wv.ci === 0) sayOne("wsay", L.words[wv.wi].hanzi); /* a new word: hear it */
+  }
+
+  /* ---------- 写一写 Write it (Play): hear the word, write each character with no outline ---------- */
+  /* G.ci = character being written, G.strokes = its strokes done, G.cm = its missed strokes, G.ch = it needed help. */
+  function writeGameView(g) {
+    var n = G.q.length, q = G.q[G.i], chars = q.chars, m = chars.length;
+    var row = chars.map(function (c, k) {
+      var shown = G.solved || k < G.ci, st = q.done[k];
+      return '<span class="tzg' + (!G.solved && k === G.ci ? " cur" : "") + (shown && st && !st.ok ? " helped" : "") + '"><span>' + (shown ? esc(c) : "") + "</span></span>";
+    }).join("");
+    var label = G.solved ? q.w.hanzi : chars.map(function (c, k) { return k < G.ci ? c : k === G.ci ? "now writing" : "empty"; }).join(", ");
+    return '<div class="screen game g-writeIt">' + gameTop(n, G.i) + howto(g.how[0], g.how[1], "wg-how") +
+      '<section class="wg' + (G.solved ? " solved" : "") + '" aria-label="' + esc(g.region) + '">' +
+      '<div class="wg-head"><button type="button" class="g-say" data-act="gsay" data-hl="gsay"><span class="listen-ic">' + IC.spkMid + '</span><span lang="zh-CN">再听一次</span> Hear again</button>' +
+      '<span class="boxes n' + Math.min(m, 8) + ' wg-row' + (G.solved ? " solved" : "") + '" role="img" aria-label="' + esc(label) + '">' + row + "</span></div>" +
+      (G.solved
+        ? '<p class="g-reveal wg-reveal" role="status"><span class="g-r-py">' + esc(q.w.pinyin || "") + '</span><span class="g-r-en">' + esc(q.w.english || "") + "</span></p>" +
+          '<div class="g-tools"><button type="button" class="big-btn dark g-next" data-act="wgnext"><span class="bb-cn" lang="zh-CN">' + (G.i < n - 1 ? "下一个" : "看结果") + '</span><span class="bb-en">' + (G.i < n - 1 ? "Next" : "Finish") + "</span>" + IC.arrowR + "</button></div>"
+        : '<div class="hw-box wg-box" role="img" aria-label="Drawing box for character ' + (G.ci + 1) + " of " + m + '"><div class="hw-target"></div></div>' +
+          '<div class="wg-foot"><p class="wv-status wg-status" role="status"></p>' +
+          '<div class="g-tools"><button type="button" class="g-hint" data-act="whint"><span aria-hidden="true">💡</span><span lang="zh-CN">提示</span> Hint</button></div></div>') +
+      "</section></div>";
+  }
+  function mountGameWriter() {
+    var t = root.querySelector(".hw-target"), q = G.q[G.i]; if (!t || !q) return;
+    dropWriter(); t.innerHTML = "";
+    wrSize = Math.floor(t.clientWidth);
+    var w = WR = hanziWriter(t, q.chars[G.ci], writerOptions(wrSize, true, false));
+    if (!w) { writeStatus("Stroke order isn't available here."); return; }
+    G.busy = false; /* a fresh writer: no 💡 animation or pause in progress */
+    gameQuiz(w);
+  }
+  /* No outline and no automatic highlight: after 3 misses on a stroke the outline shows for a moment. */
+  function gameQuiz(w) {
+    w.quiz({ leniency: LENIENCY, showHintAfterMisses: false, quizStartStrokeNum: G.strokes,
+      onMistake: function (d) {
+        if (WR !== w) return; G.cm++;
+        if (d.mistakesOnStroke % 3 === 0) { G.ch = true; w.showOutline(); setTimeout(function () { if (WR === w) w.hideOutline(); }, 1500); }
+      },
+      onCorrectStroke: function (d) { if (WR === w) G.strokes = d.strokeNum + 1; },
+      onComplete: function () { if (WR === w) writeCharDone(w); } });
+  }
+  /* 💡 提示: play this character's stroke order once, then carry on from the stroke the child was on. */
+  function writeHint() {
+    var w = WR; if (G.phase !== "run" || G.game !== "writeIt" || G.solved || !w || G.busy) return;
+    G.ch = true; G.busy = true; w.cancelQuiz(); writeStatus("看一看 Watch the strokes");
+    w.animateCharacter({ onComplete: function () {
+      if (WR !== w) return; G.busy = false; w.hideCharacter(); writeStatus("写一写 Your turn"); gameQuiz(w);
+    } });
+  }
+  /* A character counts as right with no help and at most 2 missed strokes. */
+  function writeCharDone(w) {
+    var q = G.q[G.i], gi = G.i, ci = G.ci; q.done[ci] = { ok: !G.ch && G.cm <= 2, helped: G.ch };
+    var last = ci === q.chars.length - 1;
+    G.busy = true; /* no 💡 during the short pause */
+    function still() { return G.phase === "run" && G.i === gi && G.ci === ci && !G.solved; }
+    if (!last) {
+      clearTimeout(gTimer); gTimer = setTimeout(function () {
+        if (!still()) return;
+        G.ci++; G.strokes = 0; G.cm = 0; G.ch = false; render();
+      }, 700);
+      return;
+    }
+    q.firstTry = q.done.every(function (d) { return d.ok; });
+    q.helped = q.done.some(function (d) { return d.helped; });
+    clearTimeout(gTimer); gTimer = setTimeout(function () {
+      if (!still()) return;
+      G.solved = true; dropWriter(); render(); chime(); sayWordSoon(q.w, 300);
+      var nx = root.querySelector(".g-next"); if (nx) nx.focus({ preventScroll: true });
+    }, 600);
+  }
+  function writeGameNext() {
+    clearTimeout(gTimer); if (G.phase !== "run" || !G.solved) return;
+    stopSpeech();
+    if (G.i < G.q.length - 1) {
+      G.i++; G.ci = 0; G.strokes = 0; G.cm = 0; G.ch = false; G.solved = false; render();
+      var s = root.querySelector(".g-say"); if (s) s.focus({ preventScroll: true });
+      curGame().onShow(G.q[G.i]);
+    } else writeGameFinish();
+  }
+  /* Stars = words fully right. Words where a character needed help (outline or 💡) go to Tricky words. */
+  function writeGameFinish() {
+    var g = curGame(), first = G.q.filter(function (q) { return q.firstTry; }).length, total = G.q.length;
+    applyTricky(G.q.map(function (q) { return { w: q.w, ok: !q.helped }; }));
+    var b = saveBest(g.id, G.listId, first, total, false), helped = G.q.filter(function (q) { return q.helped; }).length;
+    G.result = { first: first, total: total, best: b.best, newBest: b.newBest && first > 0, missed: helped,
+      head: first >= total ? ["太棒了！", "All " + total + " words written!"] : first > 0 ? ["做得好！", first + " / " + total + " words just right!"] : ["加油！", "Good try! Let's write again."] };
+    G.phase = "end"; render(); toTop();
+    var a = root.querySelector('[data-act="gagain"]'); if (a) a.focus({ preventScroll: true });
   }
 
   /* ---------- sound effects (Web Audio, no files; Parent corner → Sounds) ---------- */
@@ -1196,6 +1295,8 @@
     wsay: function () { var L = curList(), w = L && S.write && L.words[S.write.wi]; if (w) { stopSpeech(); sayOne("wsay", w.hanzi); } },
     wprev: function () { moveWrite(-1); },
     wnext: function () { moveWrite(1); },
+    whint: writeHint,
+    wgnext: writeGameNext,
     pvprev: function () { moveFocus(-1); },
     pvnext: function () { moveFocus(1); },
     pvsay: sayPic,
@@ -1268,6 +1369,7 @@
       if (items[to]) items[to].focus();
       return;
     }
+    if (S.mode === "play" && G.phase === "run" && G.game === "writeIt") { if (space && !onBtn) { e.preventDefault(); ACT.gsay(); } return; }
     /* Picture quiz: keys 1/2/3 pick a choice. */
     if (S.mode === "play" && G.phase === "run" && /^[1-9]$/.test(k)) {
       var q = G.q[G.i];

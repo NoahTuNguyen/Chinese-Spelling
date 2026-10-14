@@ -740,6 +740,32 @@ body.full .main{max-width:none;padding:0}
   .wv-side{width:340px}
 }
 
+/* ---------- 写一写 Write it (Play) ---------- */
+.game-card.g-writeIt{background:var(--t4)}
+.gc-write{position:relative}
+.gc-art .gc-write svg{position:absolute;right:12px;bottom:8px;width:34px;height:34px;color:var(--pencil-shadow)}
+.screen.g-writeIt{max-width:640px}
+.wg{container-type:inline-size;margin-top:4px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.wg-row{--box:min(64px,calc((100cqi - 16px) / var(--n)))}
+.wg-row.solved{--box:min(104px,calc((100cqi - 16px) / var(--n)))}
+.wg-row .tzg{border-width:2.5px}
+.wg-row.solved .tzg>span{animation:drop-in .5s cubic-bezier(.3,1.5,.5,1) both}
+.wg-row .tzg.cur{z-index:1;outline:4px solid var(--pencil);outline-offset:-2px;background:var(--pencil-ring)}
+.wg-row .tzg.helped>span{color:var(--again)}
+.wg-box{width:min(var(--hw),100%,52vh)}
+.wg-reveal{min-height:40px}
+.wg-head,.wg-foot{display:flex;flex-direction:column;align-items:center;gap:12px}
+.wg-foot{gap:0}
+/* iPad landscape and desktop: Hear again and the row to the left of the box, 💡 under them */
+@media (min-width:1000px){
+  .screen.g-writeIt{max-width:1000px}
+  .wg:not(.solved){display:grid;grid-template-columns:auto auto;grid-template-areas:"head box" "foot box";justify-content:center;align-items:center;column-gap:56px;margin-top:12px}
+  .wg-head{grid-area:head;align-self:end;padding-bottom:12px}
+  .wg-box{grid-area:box;width:min(var(--hw),56vh)} /* no % in an auto grid column */
+  .wg-foot{grid-area:foot;align-self:start}
+  .wg:not(.solved) .wg-row{--box:72px}
+}
+
 /* ---------- reduced motion: no bounce, no scaling, no confetti fall, still bars ---------- */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
