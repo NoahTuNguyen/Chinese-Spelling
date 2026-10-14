@@ -248,7 +248,13 @@ replay, slow speed); 2 描一描 Trace (quiz with the outline visible, hint afte
 prev/next character and next word. Only the drawing box disables page scroll and zoom
 (`touch-action: none`), so finger and Apple Pencil strokes don't move the page. Quiz leniency a
 little above default (1.3) for young children. How-to: 看一看，描一描，写一写 · Watch, trace, then
-write.
+write. Built as: the word's characters across the top (current one underlined in pencil yellow),
+pinyin of the current character and a 🔊 pill with the word above the box, a status line under it
+(描一描 Now trace it / 太棒了！ Perfect! / 做得好！ Well done!, with a chime), then the three step
+buttons, 再看一次 Watch again / 再写一次 Try again, ‹ and 下一个字 Next character → 下一个词 Next
+word → 完成 Done on the last word. A new character starts at Watch; a new word is spoken. From
+1000 px wide the steps sit beside the box. Keys: ←/→ characters, Space hears the word, Esc closes.
+Nothing is scored here.
 
 **15 写一写 Write it (Play).** Game card after 泡泡: 写一写 Write it — Hear the word, write it. Every
 word in the list once, random order; the word is spoken at the start (🔊 replays it). Empty 田字格
@@ -258,7 +264,12 @@ character counts as correct when written with no hints and ≤ 2 missed strokes.
 whole word is shown with pinyin and a chime. End screen like the other games: stars = words fully
 correct, 再玩一次 Play again / 回到游戏 Back to games. Characters that needed hints go to Tricky
 words (their word). Best score per list in `tx-games`. How-to: 听一听，写一写 · Listen, then write
-the word.
+the word. Built as: 再听一次 Hear again, a row of small 田字格 boxes (the one being written is
+yellow; finished characters appear in them, orange if they needed help), the drawing box, a
+status line and 💡 提示 Hint. The hint resumes from the stroke the child was on. Help = the
+outline flash or 💡. When the word is done the row grows to show it with pinyin and English, the
+word is spoken again, and 下一个 Next / 看结果 Finish moves on (no auto-advance, so there is time
+to look). Space hears the word again.
 
 ## Data changes (`src/data/lists.json`)
 Add an optional `pic` per word: a single emoji used as the picture, e.g.

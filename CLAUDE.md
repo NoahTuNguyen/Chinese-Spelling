@@ -166,14 +166,24 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
 - Each character sits in a green 田字格 box (`.tzg`); boxes size to their card with a container query.
 - Navigation: four tabs, always in this order: 学习 Learn, 玩一玩 Play, 听写 Dictation, 难词 Tricky.
   Bottom tab bar under 768px (fits at 320px), segmented tabs in a top app bar from 768px.
-  Dictation, Check, Well done, focus mode, the picture card and a game round are full screen
-  (`body.full`: no bars).
+  Dictation, Check, Well done, focus mode, the picture card, the Write view and a game round
+  are full screen (`body.full`: no bars).
 - Word cards: a wrapper `.word` with `.word-main` (whole card, plays the word) and, in Learn,
   a small `ⓘ more` button that opens the picture card (a button can't sit inside a button).
   Picture (4:3 `img`, else emoji, else none) above the 田字格 when the Pictures switch is on.
 - Picture card (`S.pic`, from `ⓘ more` or focus mode's 看图 More): big picture, word, pinyin,
-  Listen, English explanation, example sentence + pinyin with its own play button;
+  Listen, 写一写 Write, English explanation, example sentence + pinyin with its own play button;
   prev/next, swipe, ←/→, Esc or ✕ closes back to where it was opened.
+- Write view (`S.write = { wi, ci, step, from }`, from 写一写 Write on the picture card or in
+  focus mode): one character at a time in a big 田字格 drawing box (`.hw-box`, the only place
+  with `touch-action: none`); steps 看一看 Watch / 描一描 Trace / 写一写 Write; prev/next
+  character, then next word (the last one says 完成 Done); ←/→, Space = hear, Esc or ✕ goes
+  back to where it was opened. No scores or Tricky entries here.
+- Stroke-order writers: there is only ever ONE live writer (`WR`). `render()` mounts it into
+  `.hw-target` (`mountWriterForView`) and drops it on every other screen, so any re-render
+  restarts the current step; it is rebuilt when the box width changes. Colours come from tokens
+  (`writerOptions`: `--ink`, `--grid` for correct quiz strokes, `--pencil` highlight,
+  `--hw-outline`), leniency `LENIENCY` = 1.3.
 - Title picker: the list title (`.title-btn` inside the `<h1>`, 听写（N） ▾ + date line) and the
   sticker count pill (`.stk-pill`) open the week sheet `<dialog id="weeks">` ("选一周 Choose a
   week": one row per list with date, 听写（N）, Next tag, sticker state; past dimmed). It is the
@@ -185,7 +195,7 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   Dictation (Hear again, empty 田字格, Next), Check your paper (two faces per word; Done
   once all are marked), Well done (stars scaled to 5, sticker + sticker book), Tricky.
 - Play: game picker built from the `GAMES` registry in app.js; picker order 看图选词, 听音选字,
-  缺字, 翻翻乐, 泡泡 (see docs/design/README.md). Shared engine (`G` state): `startGame`,
+  缺字, 翻翻乐, 泡泡, 写一写 (see docs/design/README.md). Shared engine (`G` state): `startGame`,
   `gameTop` (✕, dots, "2 / 5"), `choiceView`/`gamePick`/`gameNext` for choice games (a game
   supplies `build`, `media`, `onShow`, `how`, `hint`), `gameFinish`/`gameEndView`, `saveBest`,
   distractors via `otherWords` (same list first, then nearest lists). Right = blue + tick +
@@ -209,6 +219,13 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
     pauses while the tab is hidden. Bubbles are moved with `element.style.transform` (CSSOM,
     allowed by the CSP; no `style=""` in markup). Taps update the bubbles in place. Reduced
     motion: a still row that fades in. Score = rounds right on the first tap.
+  - 写一写 Write it (`kind: "write"`): each word once; spoken on show, 🔊 Hear again (Space).
+    Small 田字格 row (current box yellow) + drawing box with NO outline. `G.ci` = character,
+    `G.strokes` = strokes done, `G.cm` = misses, `G.ch` = needed help. 3 misses on a stroke →
+    outline for 1.5 s; 💡 提示 animates the strokes, then the quiz carries on from the same
+    stroke (`quizStartStrokeNum`). A character is right with no help and ≤ 2 misses; a word is
+    right when all its characters are. Stars/best = words right; words where a character
+    needed help go to Tricky.
 - Parent corner: `<dialog>`; press-and-hold 1.5 s on touch, click/keyboard elsewhere.
   Holds the Pinyin/Pictures/English/Slow voice + Sounds/Dark theme switches, how it
   works, Add to Home Screen tip (phones/tablets), Credits (Hanzi Writer MIT, stroke data Arphic
