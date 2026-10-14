@@ -224,7 +224,10 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   About this app. Full screen, no bars, shown even while lists.json is still loading: brand banner
   (`<picture>`, phone crop under 600px, wide crop above, max-width 720px), 欢迎！ / Welcome to 听写
   practice, one line, big yellow 开始 Start (Esc does the same) which sets `tx-welcomed` and opens
-  Learn. Never write text over the banner.
+  Learn. Never write text over the banner. Banner + words + button are one centred block (auto
+  margins top and bottom), never pinned to the bottom of the view: a `dvh`/`vh` container can be
+  taller than what iOS Safari shows, which hid the Start button. Under 600px tall the banner is
+  capped at `30svh` (cover crop) and the type tightens so nothing has to be scrolled to.
 - Screens: Learn (title picker, word cards, Play all tile, One by one → focus mode,
   Write → a Write session over the list),
   Dictation (Hear again, empty 田字格, Next), Check your paper (two faces per word; Done

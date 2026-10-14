@@ -136,7 +136,12 @@ with no tab bar: the brand banner, then 欢迎！ / "Welcome to 听写 practice"
 ("Listen, learn and practise your weekly 听写 words") and a big yellow 开始 Start button that
 remembers the device and opens Learn (Esc does the same). It needs no list data, so it shows while
 `lists.json` is still loading. Parent corner → "About this app" brings it back at any time.
-On phones the button sits low (thumb reach); from 768 px the whole block is centred.
+Banner, words and button are **one centred block** (auto margin above the banner and below the foot):
+the button is never pinned to the bottom of the view, because a container sized in `dvh`/`vh` can be
+taller than the part iOS Safari actually shows, which would push 开始 Start under the toolbar.
+Under 600 px tall (small phones, any phone in landscape) the banner is capped at `30svh`
+(`object-fit: cover`, `object-position: 50% 35%` keeps the faces and the star) and the type tightens,
+so the whole screen fits without scrolling.
 
 **1 Learn.** Header: 本周 This week pill (only when showing the next upcoming list),
 title picker 听写（N） ▾ with its date line, sticker count pill (+ Back to this week pill when
