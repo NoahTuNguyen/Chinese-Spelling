@@ -31,8 +31,10 @@ CSP blocks inline `style=""`. Turn them into classes and tokens in `styles.css`.
 - Full-screen views (dictation, check, well done, focus mode, the picture card, Write, games) are sized
   `min-height: 100vh` → `100dvh` → `100svh` (each line only applies where the browser knows the unit), so
   the view fits the viewport *with* the browser bars showing. They also add
-  `env(safe-area-inset-bottom)` plus `--fsbot` (52 px on phones, 0 from 768 px) at the bottom, so no
-  button ends up in the strip iOS Safari's collapsed toolbar draws over at the end of a scrolling page.
+  `env(safe-area-inset-bottom)` plus `--fsbot` at the bottom (52 px on phones; 0 from 768 px and 0 in
+  `display-mode: standalone`, where a Home Screen app has no browser toolbar — the safe-area padding
+  still keeps the home indicator clear), so no button ends up in the strip iOS Safari's collapsed
+  toolbar draws over at the end of a scrolling page.
   Same rule for heights measured in `vh` (bubble field, drawing box): give an `svh` line after the `vh` one.
 
 ## Design tokens

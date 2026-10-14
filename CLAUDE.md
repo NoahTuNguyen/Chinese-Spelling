@@ -170,7 +170,8 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   are full screen (`body.full`: no bars).
 - Full-screen views are `min-height:100vh` → `100dvh` → `100svh` (three lines, each used only where
   the unit is known) and pad the bottom with `env(safe-area-inset-bottom)` + `--fsbot` (52px on
-  phones, 0 from 768px), so nothing sits under iOS Safari's collapsed toolbar. Heights in `vh`
+  phones, 0 from 768px and 0 in `display-mode: standalone`, where there is no browser toolbar),
+  so nothing sits under iOS Safari's collapsed toolbar. Heights in `vh`
   (bubble field, drawing box) get an `svh` line after the `vh` one. Essential controls never live in
   the bottom ~80px of a scrolling view.
 - Word cards: a wrapper `.word` with `.word-main` (whole card, plays the word) and, in Learn,

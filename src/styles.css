@@ -18,6 +18,9 @@
   color-scheme:light;
 }
 @media (max-width:767px){:root{--fsbot:52px}}
+/* Added to the Home Screen there is no browser toolbar to clear, so only the safe-area padding
+   (home indicator) is kept. Must stay after the phone rule above to win. */
+@media (display-mode:standalone){:root{--fsbot:0px}}
 /* Dark theme is opt-in (Parent corner → Dark theme), not tied to the device setting:
    the kid view should look like the mint exercise-book mockups by default. */
 :root[data-theme="dark"]{
