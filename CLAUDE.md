@@ -168,17 +168,29 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   Bottom tab bar under 768px (fits at 320px), segmented tabs in a top app bar from 768px.
   Dictation, Check, Well done, focus mode, the picture card, the Write view and a game round
   are full screen (`body.full`: no bars).
+- Full-screen views are `min-height:100vh` → `100dvh` → `100svh` (three lines, each used only where
+  the unit is known) and pad the bottom with `env(safe-area-inset-bottom)` + `--fsbot` (52px on
+  phones, 0 from 768px), so nothing sits under iOS Safari's collapsed toolbar. Heights in `vh`
+  (bubble field, drawing box) get an `svh` line after the `vh` one. Essential controls never live in
+  the bottom ~80px of a scrolling view.
 - Word cards: a wrapper `.word` with `.word-main` (whole card, plays the word) and, in Learn,
-  a small `ⓘ more` button that opens the picture card (a button can't sit inside a button).
-  Picture (4:3 `img`, else emoji, else none) above the 田字格 when the Pictures switch is on.
-- Picture card (`S.pic`, from `ⓘ more` or focus mode's 看图 More): big picture, word, pinyin,
-  Listen, 写一写 Write, English explanation, example sentence + pinyin with its own play button;
-  prev/next, swipe, ←/→, Esc or ✕ closes back to where it was opened.
-- Write view (`S.write = { wi, ci, step, from }`, from 写一写 Write on the picture card or in
-  focus mode): one character at a time in a big 田字格 drawing box (`.hw-box`, the only place
-  with `touch-action: none`); steps 看一看 Watch / 描一描 Trace / 写一写 Write; prev/next
-  character, then next word (the last one says 完成 Done); ←/→, Space = hear, Esc or ✕ goes
-  back to where it was opened. No scores or Tricky entries here.
+  a small `看 Look` button (magnifier icon, `aria-label` "Look at <word> bigger") that opens the
+  picture card (a button can't sit inside a button). Picture above the 田字格 when the Pictures
+  switch is on: 4:3 `img`, else emoji, else none; 16:10 under 600px so more cards fit.
+- Learn bar: the how-to line plus 一个一个 One by one and 写一写 Write on one row. Under 600px the
+  buttons drop their English, the how-to uses a shorter English wording, the sticker pill stays on
+  the title's row and pictures are 16:10 — four cards show below the header at 390×844.
+- Picture card (`S.pic`, from `看 Look` or focus mode's 看图 More): big picture, then pinyin directly
+  above the 田字格 boxes, 听一听 Listen and 写一写 Write side by side, English explanation, example
+  sentence + pinyin with its own play button; prev/next (in the gutters beside the card on phones,
+  vertically centred), swipe, ←/→, Esc or ✕ closes back to where it was opened.
+- Write view (`S.write = { wi, ci, step, from, done }`): one character at a time in a big 田字格
+  drawing box (`.hw-box`, the only place with `touch-action: none`); steps 看一看 Watch / 描一描
+  Trace / 写一写 Write; prev/next character, then next word (the last one says 完成 Done); ←/→,
+  Space = hear, Esc or ✕ goes back where it was opened. `from` = `"pic"` / `"focus"` (one word,
+  opened from the picture card or focus mode) or `"learn"` — a session over the whole list from the
+  Learn bar, with word dots and, after the last word (`done`), a finish screen with 再写一次 Write
+  again / 回到学习 Back to Learn. No scores or Tricky entries here.
 - Stroke-order writers: there is only ever ONE live writer (`WR`). `render()` mounts it into
   `.hw-target` (`mountWriterForView`) and drops it on every other screen, so any re-render
   restarts the current step; it is rebuilt when the box width changes. Colours come from tokens
@@ -191,7 +203,8 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   Dictation start screen, Play's game picker and Tricky; hidden while a dictation or game round
   runs and on the picture card.
   "回到本周 Back to this week" shows when the chosen list isn't the default.
-- Screens: Learn (title picker, word cards, Play all tile, One by one → focus mode),
+- Screens: Learn (title picker, word cards, Play all tile, One by one → focus mode,
+  Write → a Write session over the list),
   Dictation (Hear again, empty 田字格, Next), Check your paper (two faces per word; Done
   once all are marked), Well done (stars scaled to 5, sticker + sticker book), Tricky.
 - Play: game picker built from the `GAMES` registry in app.js; picker order 看图选词, 听音选字,

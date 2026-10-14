@@ -101,7 +101,10 @@
     one: ic(22, '<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M10.5 9.5l2-1.5v8"/>'),
     puzzle: ic(22, '<path d="M9.5 4.5a2.5 2.5 0 0 1 5 0V6H18a1 1 0 0 1 1 1v3.5h-1.5a2.5 2.5 0 0 0 0 5H19V19a1 1 0 0 1-1 1h-3.5v-1.5a2.5 2.5 0 0 0-5 0V20H6a1 1 0 0 1-1-1v-3.5h1.5a2.5 2.5 0 0 0 0-5H5V7a1 1 0 0 1 1-1h3.5z"/>'),
     tick: ic(22, '<path d="M5 12.5l4.5 4.5L19 7.5"/>', line(3.2)),
-    bulb: ic(20, '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>', line(2))
+    bulb: ic(20, '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>', line(2)),
+    /* magnifier with a + : "look at this bigger" (word cards' 看 Look button) */
+    zoom: ic(18, '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.4 15.4L21 21"/><path d="M8 10.5h5M10.5 8v5"/>', line(2.2)),
+    pencilBig: ic(64, '<path d="M17 3l4 4L8 20H4v-4z"/><path d="M14 6l4 4"/>', line(1.6))
   };
   function starFill(size) { return ic(size, '<path d="' + STAR + '"/>', 'fill="currentColor"'); }
   var RING = '<svg class="ring" viewBox="0 0 52 52" aria-hidden="true" focusable="false"><circle cx="26" cy="26" r="24" pathLength="100"/></svg>';
@@ -166,8 +169,12 @@
     if (voiceState === "other") return '<p class="banner">This browser only has a non-mainland Chinese voice, so the accent may differ slightly from school. Edge or Chrome usually have a mainland voice.</p>';
     return "";
   }
-  /* One short how-to line per screen: simple Chinese (kid) + English (kid or parent). */
-  function howto(cn, en, cls) { return '<p class="howto' + (cls ? " " + cls : "") + '">' + (cn ? '<span class="howto-cn" lang="zh-CN">' + esc(cn) + "</span> · " : "") + esc(en) + "</p>"; }
+  /* One short how-to line per screen: simple Chinese (kid) + English (kid or parent).
+     shortEn (optional): a shorter English wording used on phones under 600px, where the line shares a row. */
+  function howto(cn, en, cls, shortEn) {
+    var eng = shortEn ? '<span class="howto-en lg">' + esc(en) + '</span><span class="howto-en sm">' + esc(shortEn) + "</span>" : esc(en);
+    return '<p class="howto' + (cls ? " " + cls : "") + '">' + (cn ? '<span class="howto-cn" lang="zh-CN">' + esc(cn) + "</span> · " : "") + eng + "</p>";
+  }
 
   var TABS = [["learn", "学习", "Learn", IC.book], ["play", "玩一玩", "Play", IC.puzzle], ["dict", "听写", "Dictation", IC.pencil], ["tricky", "难词", "Tricky", IC.star]];
   function nav() {
@@ -206,14 +213,14 @@
     if (w.pic) return '<span class="' + cls + ' emoji" role="img" aria-label="' + esc(w.english || "") + '"><span aria-hidden="true">' + esc(w.pic) + "</span></span>";
     return "";
   }
-  /* A word card: the main button plays the word; "ⓘ more" (Learn only) opens the picture card. */
+  /* A word card: the main button plays the word; "看 Look" (Learn only) opens the picture card. */
   function card(w, i, src, extra, more) {
     return '<div class="word t' + (i % 5) + '" data-hl="' + src + "-" + i + '">' +
       '<button type="button" class="word-main" data-act="say" data-src="' + src + '" data-i="' + i + '" aria-label="Hear ' + esc(w.hanzi) + '">' +
       picture(w, "card-pic") + BARS + boxes(w.hanzi) +
       (prefs.py && w.pinyin ? '<span class="py">' + esc(w.pinyin) + "</span>" : "") +
       (prefs.en && w.english ? '<span class="en">' + esc(w.english) + "</span>" : "") + (extra || "") + "</button>" +
-      (more ? '<button type="button" class="more" data-act="picview" data-i="' + i + '" aria-label="More about ' + esc(w.hanzi) + '"><span class="more-pill"><span aria-hidden="true">ⓘ</span> more</span></button>' : "") +
+      (more ? '<button type="button" class="more" data-act="picview" data-i="' + i + '" aria-label="Look at ' + esc(w.hanzi) + ' bigger"><span class="more-pill">' + IC.zoom + '<span lang="zh-CN">看</span> Look</span></button>' : "") +
       "</div>";
   }
   function tile(act, icon, cn, en) {
@@ -243,9 +250,11 @@
     return '<button type="button" class="stk-pill" data-act="weeks" aria-haspopup="dialog" aria-label="' + n + (n === 1 ? " sticker" : " stickers") + '. Choose a week">' +
       '<span class="ws-stk got">' + starFill(14) + '</span><span aria-hidden="true">' + n + "</span></button>";
   }
+  /* The sticker pill sits right of the title (same row, even on small phones); a long Back to this week
+     pill is the only one allowed to wrap onto the next line. */
   function listHead(L, small) {
     return (!small && L.id === nextId() ? '<span class="pill-week"><span lang="zh-CN">本周</span> This week</span>' : "") +
-      '<div class="title-row">' + titlePicker(L, small) + '<div class="title-pills">' + stickerPill() + backPill(small ? "f-back" : "") + "</div></div>";
+      '<div class="title-row">' + titlePicker(L, small) + stickerPill() + backPill(small ? "f-back" : "") + "</div>";
   }
 
   /* ---------- Learn ---------- */
@@ -255,8 +264,10 @@
     if (S.pic) return picView(L);
     if (S.focus) return focusView(L);
     return top(listHead(L)) +
-      '<div class="learn-bar">' + howto("点一点，听一听", "Tap a word to hear it.") +
-      '<button type="button" class="onebyone" data-act="focus">' + IC.one + '<span lang="zh-CN">一个一个</span> One by one</button></div>' +
+      '<div class="learn-bar">' + howto("点一点，听一听", "Tap a word to hear it.", "", "Tap to hear") +
+      '<div class="learn-acts">' +
+      '<button type="button" class="onebyone" data-act="focus">' + IC.one + '<span lang="zh-CN">一个一个</span><span class="lb-en"> One by one</span></button>' +
+      '<button type="button" class="onebyone lb-write" data-act="wsession">' + IC.pencil + '<span lang="zh-CN">写一写</span><span class="lb-en"> Write</span></button></div></div>' +
       '<div class="grid">' + L.words.map(function (w, i) { return card(w, i, "learn", "", true); }).join("") +
       (S.playing ? tile("playall", IC.stop, "停一停", "Stop") : tile("playall", IC.play, "全部听", "Play all")) + "</div>" + keyHints();
   }
@@ -298,9 +309,11 @@
       '<button type="button" class="f-nav prev" data-act="pvprev" aria-label="Previous word"' + (i === 0 ? " disabled" : "") + ">" + IC.chevL + "</button>" +
       '<div class="pv-card t' + (i % 5) + (media ? "" : " no-pic") + '" data-hl="pv-' + i + '">' + BARS + media +
       '<div class="pv-info">' +
-      '<div class="pv-word">' + boxes(w.hanzi) + '<div class="pv-side">' + (w.pinyin ? '<span class="pv-py">' + esc(w.pinyin) + "</span>" : "") +
+      /* pinyin sits directly above the 田字格 boxes, centred on them; Listen and Write side by side below */
+      '<div class="pv-word"><div class="pv-chars">' + (w.pinyin ? '<span class="pv-py">' + esc(w.pinyin) + "</span>" : "") + boxes(w.hanzi) + "</div>" +
+      '<div class="pv-acts">' +
       '<button type="button" class="listen" data-act="pvsay" aria-label="Listen to ' + esc(w.hanzi) + '"><span class="listen-ic">' + IC.spkMid + '</span><span class="listen-cn" lang="zh-CN">听一听</span><span class="listen-en">Listen</span></button>' +
-      '<button type="button" class="pv-write" data-act="wopen" data-i="' + i + '" aria-label="Write ' + esc(w.hanzi) + '">' + IC.pencil + '<span lang="zh-CN">写一写</span> Write</button></div></div>' +
+      '<button type="button" class="pv-write" data-act="wopen" data-i="' + i + '" aria-label="Write ' + esc(w.hanzi) + '">' + IC.pencil + '<span lang="zh-CN">写一写</span><span class="listen-en"> Write</span></button></div></div>' +
       (w.explain ? '<p class="pv-explain">' + esc(w.explain) + "</p>" : "") +
       (w.sentence ? '<div class="pv-sent"><p class="pv-s-cn" lang="zh-CN">' + esc(w.sentence) + "</p>" + (w.sentencePinyin ? '<p class="pv-s-py">' + esc(w.sentencePinyin) + "</p>" : "") +
         '<button type="button" class="sent-play" data-act="pvsent" data-hl="pvs-' + i + '" aria-label="Hear the sentence"><span class="listen-ic">' + IC.spkMid + '</span><span class="listen-cn" lang="zh-CN">听句子</span><span class="listen-en">Hear the sentence</span></button></div>' : "") +
@@ -866,18 +879,24 @@
   });
 
   /* ---------- 写一写 Write (Learn): watch, trace, then write each character ---------- */
-  /* S.write = { wi: word index, ci: character index, step: "watch" | "trace" | "write", from: "pic" | "focus" } */
+  /* S.write = { wi: word index, ci: character index, step: "watch" | "trace" | "write",
+     from: "learn" (a whole-list session from the Learn bar) | "pic" | "focus", done: the session's finish screen */
   function writeView(L) {
-    var wv = S.write, w = L.words[wv.wi], chars = Array.from(w.hanzi), ci = wv.ci, ch = chars[ci], n = chars.length;
+    var wv = S.write;
+    if (wv.done) return writeEndView(L);
+    var w = L.words[wv.wi], chars = Array.from(w.hanzi), ci = wv.ci, ch = chars[ci], n = chars.length;
+    var nw = L.words.length, dots = "";
+    if (wv.from === "learn") { for (var k = 0; k < nw; k++) dots += "<span" + (k === wv.wi ? ' class="on"' : k < wv.wi ? ' class="done"' : "") + "></span>"; }
     var chips = chars.map(function (c, i) { return '<span class="wv-ch' + (i === ci ? " on" : "") + '">' + esc(c) + "</span>"; }).join("");
     var steps = [["watch", "看一看", "Watch"], ["trace", "描一描", "Trace"], ["write", "写一写", "Write"]].map(function (s, k) {
       return '<button type="button" class="wv-step" data-act="wstep" data-v="' + s[0] + '" aria-pressed="' + (wv.step === s[0]) + '"><span class="wv-n" aria-hidden="true">' + (k + 1) + '</span><span class="bb-cn" lang="zh-CN">' + s[1] + '</span><span class="bb-en">' + s[2] + "</span></button>";
     }).join("");
     var again = wv.step === "watch" ? ["再看一次", "Watch again"] : ["再写一次", "Try again"];
-    var last = ci === n - 1, end = last && wv.wi === L.words.length - 1;
+    var last = ci === n - 1, end = last && wv.wi === nw - 1;
     return '<div class="screen wv">' +
-      '<div class="d-top"><button type="button" class="round-btn" data-act="wclose" aria-label="Close Write">' + IC.close + "</button>" +
+      '<div class="d-top"><button type="button" class="round-btn" data-act="wclose" aria-label="' + (wv.from === "learn" ? "Close Write, back to Learn" : "Close Write") + '">' + IC.close + "</button>" +
       '<span class="d-title wv-word" lang="zh-CN" aria-label="' + esc(w.hanzi) + ", character " + (ci + 1) + " of " + n + '">' + chips + '</span><span class="d-count">' + (ci + 1) + "<span> / " + n + "</span></span></div>" +
+      (dots ? '<div class="g-dots wv-dots" role="img" aria-label="Word ' + (wv.wi + 1) + " of " + nw + '">' + dots + "</div>" : "") +
       howto("看一看，描一描，写一写", "Watch, trace, then write", "wv-how") +
       '<div class="wv-body"><div class="wv-stage">' +
       '<div class="wv-head"><span class="wv-py">' + esc(charPinyin(w, ci) || w.pinyin || "") + '</span>' +
@@ -886,14 +905,24 @@
       '<p class="wv-status" role="status"></p></div>' +
       '<div class="wv-side"><div class="wv-steps" role="group" aria-label="Steps">' + steps + "</div>" +
       '<button type="button" class="wv-again" data-act="wreplay"><span aria-hidden="true">↻</span><span lang="zh-CN">' + again[0] + "</span> " + again[1] + "</button>" +
-      '<div class="wv-nav"><button type="button" class="wv-navb" data-act="wprev"' + (ci === 0 ? " disabled" : "") + ' aria-label="Previous character">' + IC.chevL + "</button>" +
+      '<div class="wv-nav"><button type="button" class="wv-navb" data-act="wprev"' + (ci === 0 && wv.wi === 0 ? " disabled" : "") + ' aria-label="' + (ci === 0 ? "Previous word" : "Previous character") + '">' + IC.chevL + "</button>" +
       '<button type="button" class="big-btn dark wv-next" data-act="wnext"><span class="bb-cn" lang="zh-CN">' + (end ? "完成" : last ? "下一个词" : "下一个字") + '</span><span class="bb-en">' + (end ? "Done" : last ? "Next word" : "Next character") + "</span>" + IC.arrowR + "</button></div>" +
       "</div></div></div>";
+  }
+  /* End of a whole-list Write session (from the Learn bar). Nothing is scored here. */
+  function writeEndView(L) {
+    var n = L.words.length;
+    return '<div class="screen welldone wv-end">' +
+      '<span class="wv-end-art" aria-hidden="true">' + IC.pencilBig + "</span>" +
+      '<h1 class="wd-cn" lang="zh-CN">写完了！</h1><p class="wd-en">You wrote all ' + n + (n === 1 ? " word" : " words") + " of " + esc(titleOf(L)) + ".</p>" +
+      '<div class="screen-foot">' + howto("", "Write them again, or go back to your words.", "wd-how") +
+      '<button type="button" class="big-btn yellow" data-act="wagain"><span class="bb-cn" lang="zh-CN">再写一次</span><span class="bb-en">Write again</span></button>' +
+      '<button type="button" class="big-btn white" data-act="wclose"><span class="bb-cn" lang="zh-CN">回到学习</span><span class="bb-en">Back to Learn</span></button></div></div>';
   }
   function writeStatus(t) { var s = root.querySelector(".wv-status"); if (s) s.textContent = t; }
   /* Mount the writer for the Write view's current character and step. */
   function mountWrite() {
-    var L = curList(), t = root.querySelector(".hw-target"); if (!L || !t || !S.write) return;
+    var L = curList(), t = root.querySelector(".hw-target"); if (!L || !t || !S.write || S.write.done) return;
     var wv = S.write, ch = Array.from(L.words[wv.wi].hanzi)[wv.ci], size = wrSize = Math.floor(t.clientWidth);
     dropWriter(); t.innerHTML = "";
     var w = WR = hanziWriter(t, ch, writerOptions(size, wv.step !== "watch", wv.step !== "write"));
@@ -906,28 +935,37 @@
     if (S.mode === "learn" && S.write) mountWrite();
     else if (S.mode === "play" && G.phase === "run" && G.game === "writeIt" && !G.solved) mountGameWriter();
   }
-  function openWrite(wi) {
+  /* from: "learn" starts a session through the whole list (Learn bar), "pic"/"focus" start at that one word. */
+  function openWrite(wi, from) {
     stopSpeech();
-    S.write = { wi: wi, ci: 0, step: "watch", from: S.pic ? "pic" : "focus" };
+    S.write = { wi: wi, ci: 0, step: "watch", from: from || (S.pic ? "pic" : "focus"), done: false };
+    S.pic = false; S.focus = false;
     render(); toTop();
     var b = root.querySelector('.wv-step[aria-pressed="true"]'); if (b) b.focus({ preventScroll: true });
+    var L = curList(); /* a session starts on a fresh word, so hear it */
+    if (from === "learn" && L && L.words[wi]) sayOne("wsay", L.words[wi].hanzi);
   }
   function closeWrite() {
     if (!S.write) return;
     var wi = S.write.wi, from = S.write.from; S.write = null; dropWriter();
-    if (from === "pic") S.pi = wi; else S.fi = wi;
+    if (from === "pic") { S.pi = wi; S.pic = true; }
+    else if (from === "focus") { S.fi = wi; S.focus = true; }
     render();
-    var b = root.querySelector('[data-act="wopen"]'); if (b) b.focus({ preventScroll: true });
+    var b = root.querySelector('[data-act="wopen"], [data-act="wsession"]'); if (b) b.focus({ preventScroll: true });
   }
   function moveWrite(d) {
-    var L = curList(), wv = S.write; if (!L || !wv) return;
-    var n = Array.from(L.words[wv.wi].hanzi).length;
-    if (d < 0) { if (wv.ci === 0) return; wv.ci--; }
-    else if (wv.ci < n - 1) wv.ci++;
-    else if (wv.wi < L.words.length - 1) { wv.wi++; wv.ci = 0; }
+    var L = curList(), wv = S.write; if (!L || !wv || wv.done) return;
+    var n = Array.from(L.words[wv.wi].hanzi).length, word = false;
+    if (d < 0) {
+      if (wv.ci > 0) wv.ci--;
+      else if (wv.wi > 0) { wv.wi--; wv.ci = Array.from(L.words[wv.wi].hanzi).length - 1; word = true; }
+      else return;
+    } else if (wv.ci < n - 1) wv.ci++;
+    else if (wv.wi < L.words.length - 1) { wv.wi++; wv.ci = 0; word = true; }
+    else if (wv.from === "learn") { wv.done = true; stopSpeech(); dropWriter(); render(); toTop(); var a = root.querySelector('[data-act="wagain"]'); if (a) a.focus({ preventScroll: true }); return; }
     else { closeWrite(); return; }
     wv.step = "watch"; stopSpeech(); render();
-    if (d > 0 && wv.ci === 0) sayOne("wsay", L.words[wv.wi].hanzi); /* a new word: hear it */
+    if (word) sayOne("wsay", L.words[wv.wi].hanzi); /* a new word: hear it */
   }
 
   /* ---------- 写一写 Write it (Play): hear the word, write each character with no outline ---------- */
@@ -1289,6 +1327,9 @@
     picview: function (b) { stopSpeech(); S.picFrom = S.focus ? "focus" : "learn"; S.pi = +b.dataset.i; S.focus = false; S.pic = true; render(); toTop(); sayPic(); },
     pvclose: closePic,
     wopen: function (b) { openWrite(+b.dataset.i); },
+    /* Learn bar: write every word of the list in order, ending on the Write again / Back to Learn screen. */
+    wsession: function () { var L = curList(); if (L && L.words.length) openWrite(0, "learn"); },
+    wagain: function () { ACT.wsession(); },
     wclose: closeWrite,
     wstep: function (b) { if (!S.write) return; S.write.step = b.dataset.v; render(); },
     wreplay: function () { writeStatus(""); mountWrite(); },
@@ -1342,6 +1383,7 @@
     var k = e.key, space = k === " " || k === "Spacebar";
     if (S.mode === "learn" && S.write) {
       if (k === "Escape") { e.preventDefault(); closeWrite(); }
+      else if (S.write.done) return; /* the session's finish screen: only its own buttons and Esc */
       else if (k === "ArrowLeft" && !onBtn) { e.preventDefault(); moveWrite(-1); }
       else if (k === "ArrowRight" && !onBtn) { e.preventDefault(); moveWrite(1); }
       else if (space && !onBtn) { e.preventDefault(); ACT.wsay(); }

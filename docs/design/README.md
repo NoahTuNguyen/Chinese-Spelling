@@ -28,6 +28,12 @@ CSP blocks inline `style=""`. Turn them into classes and tokens in `styles.css`.
   Tricky: 再练一练 · Words to practise again.
 - Calm and encouraging: no timers, no fail sounds, no red for mistakes (orange instead).
 - Touch targets ≥ 48 px for kid controls (≥ 44 px minimum anywhere).
+- Full-screen views (dictation, check, well done, focus mode, the picture card, Write, games) are sized
+  `min-height: 100vh` → `100dvh` → `100svh` (each line only applies where the browser knows the unit), so
+  the view fits the viewport *with* the browser bars showing. They also add
+  `env(safe-area-inset-bottom)` plus `--fsbot` (52 px on phones, 0 from 768 px) at the bottom, so no
+  button ends up in the strip iOS Safari's collapsed toolbar draws over at the end of a scrolling page.
+  Same rule for heights measured in `vh` (bubble field, drawing box): give an `svh` line after the `vh` one.
 
 ## Design tokens
 Colors (light theme; add a dark theme with the same roles, tuned for contrast):
@@ -64,9 +70,12 @@ yellow buttons have a 4–5 px solid bottom shadow (`--pencil-shadow`) for a tac
 - **田字格 box**: square, 2 px `--grid` border, white fill, dashed centre cross
   (`::before`/`::after`). Adjacent boxes share a border. Box size shrinks for 3+ chars.
 - **Word card** (button): tinted background, white 2 px border, soft bottom shadow,
-  picture top-left, 田字格 boxes, pinyin. English only if enabled in Parent corner.
-  Playing state: `--pencil` 3 px border, scale 1.03, three animated sound bars top-right.
-  Respect `prefers-reduced-motion`.
+  picture on top (4:3; 16:10 under 600 px so more cards fit), 田字格 boxes, pinyin. English only if
+  enabled in Parent corner. Playing state: `--pencil` 3 px border, scale 1.03, three animated sound
+  bars top-right. Respect `prefers-reduced-motion`.
+  Top-right corner: a **看 Look** button (magnifier-with-plus icon + 看 Look, white pill, 48 px tap
+  target, `aria-label` "Look at 彩虹 bigger") that opens the picture card. It is a separate button
+  from the card, which plays the word.
 - **Play all tile**: last cell of the grid, yellow, white circle with play icon, 全部听 / Play all.
 - **Bottom tab bar** (phone, < 768 px wide): four tabs, in this order everywhere:
   学习 Learn (book), 玩一玩 Play (puzzle piece), 听写 Dictation (pencil), 难词 Tricky (star).
@@ -79,7 +88,9 @@ yellow buttons have a 4–5 px solid bottom shadow (`--pencil-shadow`) for a tac
   circle, and the date line under it ("Tue 20 Oct · in 7 days"). `aria-label` like
   "听写十五, Tuesday 20 October. Change week"; `aria-haspopup="dialog"`. Opens the week sheet.
 - **Sticker count pill**: beside the title, gold sticker circle + number earned (e.g. "3"),
-  ≥ 48 px tall; opens the same week sheet (`aria-label` "3 stickers. Choose a week").
+  ≥ 48 px tall (44 px under 600 px); opens the same week sheet (`aria-label` "3 stickers. Choose a
+  week"). It stays on the title's row at every phone size: the title shrinks first, and only the
+  longer "Back to this week" pill may wrap to a second line.
 - **Week sheet**: bottom sheet on phones, centred dialog on iPad/desktop (same component as
   the Parent corner). Title 选一周 Choose a week, close button, how-to line
   点一周来练习 · Tap a week to practise it. One row per list in date order, each a button
@@ -99,8 +110,14 @@ yellow buttons have a 4–5 px solid bottom shadow (`--pencil-shadow`) for a tac
 title picker 听写（N） ▾ with its date line, sticker count pill (+ Back to this week pill when
 another list is chosen). No separate sticker strip, so the word cards sit right under the
 header. Grid of word cards + Play all tile
-(2 columns phone, auto-fill `minmax(176px,1fr)` wider). A "One by one" button opens focus mode.
-Tap a card: speak it. Play all: speak each in turn, highlighting the playing card.
+(2 columns phone, auto-fill `minmax(176px,1fr)` wider). Tap a card: speak it. Play all: speak each
+in turn, highlighting the playing card.
+One bar under the heading holds the how-to line and two buttons: **一个一个 One by one** (opens focus
+mode) and **写一写 Write** (pencil; starts a Write session over the whole list, see 14).
+Under 600 px that bar stays one row — the buttons shrink to icon + Chinese and the how-to takes the
+rest of the width with a shorter English wording ("Tap to hear"), wrapping inside its own column;
+only on very narrow phones does the row wrap. With the compact header, 16:10 pictures and that one-row
+bar, four word cards are visible below the header on a 390×844 phone.
 
 **2 Dictation.** Full screen, tab bar hidden. Top: close (✕ = stop), 听写（N）, "2 / 5".
 Stepping stones: done = green check, current = yellow ring, rest grey. Heading 听一听，写一写.
@@ -138,6 +155,16 @@ Big prev/next circle buttons (next is dark), swipe on touch, ←/→ keys. Progr
 (current is a wide green pill). Bottom-right 开始听写 Dictation shortcut. 全部 All words returns
 to the grid. Default view on iPad is still the grid; focus is one tap away. The title picker
 sits in the top bar (picking a week starts at its first word).
+
+**6b Picture card.** Opened by 看 Look on a word card or 看图 More in focus mode; full screen
+(✕, list title, "2 / 5", one how-to line). One card: big 4:3 picture (emoji if there is no `img`),
+then the word — **pinyin directly above the 田字格 boxes, centred on the characters** — then
+听一听 Listen and 写一写 Write side by side, the English explanation and the example sentence with
+its own 听句子 button. Prev/next, swipe, ←/→, Esc or ✕ closes back to where it was opened.
+On phones the prev/next circles sit in the gutters left and right of the card, vertically centred,
+so they stay on screen instead of under the browser's bottom bar; from 768 px they are the big
+circles beside the card. On phones both buttons under the characters keep their Chinese label only
+(the aria-labels stay full).
 
 The title picker (with sticker pill and Back to this week) is shown on Learn (grid and focus
 mode), the Dictation start screen and Tricky, at every size; it is hidden while a dictation
@@ -239,9 +266,16 @@ character. Parent corner → Credits: "Stroke order: Hanzi Writer (MIT). Stroke 
 Hanzi / Arphic Technology, Arphic Public License." with links to both licence files.
 
 **14 写一写 Write (Learn).** A 写一写 Write button on the picture card and in focus mode opens the
-Write view for that word, one character at a time. Each character sits in a large 田字格 box (the
-grid is drawn behind the Hanzi Writer SVG): about 300 px on phones, 420 px on iPad, never
-overflowing. Colours from tokens: strokes `--ink`, outline light grey, highlight `--pencil`,
+Write view at that word; the 写一写 Write button in the Learn bar starts a **session over the whole
+list**, from its first word, and steps through every word in order (the last character of a word
+leads to 下一个词 Next word; a row of word dots under the top bar shows how far along it is).
+After the last character of the last word a finish screen appears: 写完了！, "You wrote all N words
+of 听写（N）", 再写一次 Write again and 回到学习 Back to Learn. Nothing is scored and no Tricky
+words are added. Closing (✕ or Esc) goes back where it started: the Learn grid, the picture card or
+focus mode. ‹ steps back across words too.
+One character at a time: each character sits in a large 田字格 box (the
+grid is drawn behind the Hanzi Writer SVG): about 300 px on phones (250 px on short ones), 420 px on
+iPad, never overflowing. Colours from tokens: strokes `--ink`, outline light grey, highlight `--pencil`,
 correct stroke `--grid`. Three steps with big buttons: 1 看一看 Watch (stroke-order animation,
 replay, slow speed); 2 描一描 Trace (quiz with the outline visible, hint after 2 misses);
 3 写一写 Write (quiz with no outline, hint after 3 misses). Pinyin, a 🔊 button for the word,
