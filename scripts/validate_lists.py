@@ -107,9 +107,16 @@ if look is not None:
                 if swapped != word and swapped in all_words:
                     errors.append(f"lookalikes.json {ch}: swapping {ch}→{a} in {word} gives {swapped}, another word in the lists")
 
+# ---- stroke-order data (Hanzi Writer): one file per character, from scripts/fetch_strokes.py ----
+STROKES = PATH.parent.parent / "vendor" / "hanzi-writer-data"
+used = sorted({c for l in lists for w in (l.get("words") or []) for c in w.get("hanzi", "") if HAN.match(c)})
+no_strokes = [c for c in used if not (STROKES / f"{c}.json").is_file()]
+if no_strokes:
+    errors.append(f"stroke data missing for {''.join(no_strokes)}: run python3 scripts/fetch_strokes.py")
+
 for m in warnings:
     print("warning:", m)
 if errors:
     print("\n".join(errors))
     sys.exit(1)
-print(f"OK: {len(lists)} lists, {sum(len(l['words']) for l in lists)} words, {sum(1 for l in lists for w in l['words'] if w.get('img'))} pictures, {len(look)} look-alike entries")
+print(f"OK: {len(lists)} lists, {sum(len(l['words']) for l in lists)} words, {sum(1 for l in lists for w in l['words'] if w.get('img'))} pictures, {len(look)} look-alike entries, {len(used)} characters with stroke data")
