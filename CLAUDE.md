@@ -106,7 +106,9 @@ On this Windows machine `python3` is only the Store stub; use `py -3` instead.
 - `explain` (optional): one short, simple English sentence a 6–8 year old understands.
 - `sentence` + `sentencePinyin` (optional): one short Primary 1–2 level example sentence using
   the word, and its pinyin (syllables separated by spaces, tone changes of 一/不 marked as in
-  school books, e.g. "yí dào", "bú luàn"; Western punctuation).
+  school books, e.g. "yí dào", "bú luàn"; Western punctuation). The sentence must contain the word
+  **exactly once**, and `sentencePinyin` must contain the word's `pinyin` as whole syllables
+  (句子填空 blanks both; the validator checks it).
 - Keep `lists` sorted by date. The app opens on the default list: on a test day before 15:00
   that day's list, otherwise the first list dated after today, else the latest list
   (`pickDefaultList` in `src/lists-logic.js`). `?list=l15` overrides it; the last-viewed list
@@ -255,6 +257,12 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
     when there are 3+ words). `G.step` "find" → tap the wrong character (orange pen circle, `PEN`) or
     没有错 No mistake; "fix" → pick the right character from 3 (right, the wrong one, one more
     look-alike). First try = both steps right. Keys 1…n / n+1 (没有错), then 1/2/3.
+  - 句子填空 Sentence fill-in (choice game, `sentenceMedia`/`fillChoices`/`pinyinBlank`): words with a
+    `sentence` (≥ 3 to play); the sentence with the word as empty dashed 田字格 boxes and the pinyin
+    line with one blank per syllable. Choices = 2 other words from the list, same length first, never
+    one already in the sentence. Hint = the word's picture. Right: the word drops into the boxes, its
+    pinyin turns blue, the whole sentence is read, then the next question (`nextAfter: false` — the
+    game moves on after the sentence, capped). Under 1000px the 3 choices sit in one row.
   - 翻翻乐 Memory match (`kind: "memory"`, `G.mm`): picture card ↔ characters card for up to 6
     words with an `img` or emoji; flips update the cards in place (no re-render) so the flip
     animates and focus stays. Score = moves (best = fewest, `saveBest(..., lower)`); stars

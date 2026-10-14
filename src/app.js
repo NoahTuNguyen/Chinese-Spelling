@@ -553,7 +553,27 @@
       notEnough: "This week has no words yet", ready: function (n) { return n + " words to check"; },
       art: function () { return '<span class="gc-miss gc-spot"><span class="boxes"><span class="tzg"><span>大</span></span><span class="tzg circled"><span>人</span>' + PEN + "</span></span></span>"; },
       build: function (L) { return spotQuestions(L); },
-      onShow: function (q) { sayWordSoon(q.w, 400); } }
+      onShow: function (q) { sayWordSoon(q.w, 400); } },
+    { id: "sentenceFill", cn: "句子填空", en: "Sentence fill-in", sub: "Pick the word that fits the sentence", kind: "choice",
+      how: ["选一选，填一填", "Pick the word that fits"], region: "Which word fits in the sentence?", hint: "media",
+      items: function (L) { return L ? L.words.filter(function (w) { return w.sentence && w.sentence.indexOf(w.hanzi) >= 0; }) : []; }, min: 3,
+      notEnough: "This week needs more sentences to play", ready: function (n) { return n + " sentences to play"; },
+      art: function () { return '<span class="gc-sf" lang="zh-CN">我爱<span class="boxes n2"><span class="tzg gap"><span></span></span><span class="tzg gap"><span></span></span></span>。</span>'; },
+      build: function (L) { return shuffle(this.items(L)).map(function (w) { return { w: w, answer: w.hanzi, choices: fillChoices(L, w), firstTry: true }; }); },
+      hasHint: function (q) { return !!(q.w.img || q.w.pic); },
+      media: function (q) { return sentenceMedia(q); },
+      /* Right: the word drops into the boxes, then the whole sentence is read; next question once it's done. */
+      onRight: function (q) {
+        var t = TOKEN, i = G.i;
+        setTimeout(function () {
+          if (t !== TOKEN || G.i !== i || !G.solved) return;
+          var cap = new Promise(function (r) { setTimeout(r, 2000 + Array.from(q.w.sentence).length * 500); });
+          Promise.race([speak(q.w.sentence), cap]).then(function () {
+            if (t === TOKEN && G.i === i && G.solved && G.phase === "run") { clearTimeout(gTimer); gTimer = setTimeout(gameNext, 1200); }
+          });
+        }, 650);
+      },
+      nextAfter: false }
   ];
   /* 缺字 look-alikes (data/lookalikes.json): character → [most common mix-up, others…]. */
   var LOOK = {};
@@ -674,6 +694,39 @@
     if (G.step === "fix") spotFix(d - 1);
     else if (d === q.chars.length + 1) spotNone();
     else spotPick(d - 1);
+  }
+
+  /* ---------- 句子填空 Sentence fill-in: the word blanked out of its example sentence ---------- */
+  /* 2 wrong choices: words from this list first, the same length as the answer first (so the number of
+     boxes doesn't give it away), never a word that is already in the sentence; nearby lists only top up. */
+  function fillChoices(L, w) {
+    var n = Array.from(w.hanzi).length;
+    var pool = otherWords(L, [w.hanzi], 12).filter(function (o) { return w.sentence.indexOf(o.hanzi) < 0; });
+    function rank(o) { return (L.words.indexOf(o) >= 0 ? 0 : 2) + (Array.from(o.hanzi).length === n ? 0 : 1); }
+    var picks = pool.map(function (o, k) { return { o: o, r: rank(o), k: k }; }).sort(function (a, b) { return a.r - b.r || a.k - b.k; }).slice(0, 2);
+    return shuffle([w].concat(picks.map(function (p) { return p.o; }))).map(function (c) { return { text: c.hanzi, py: c.pinyin }; });
+  }
+  /* The sentence pinyin with the word's syllables as blanks (one per syllable), or highlighted once solved. */
+  function pinyinBlank(spy, wpy, solved) {
+    var s = (spy || "").normalize("NFC"), p = (wpy || "").normalize("NFC").trim().split(/\s+/).join(" ");
+    var m = new RegExp("(^|[^\\p{L}\\p{M}])(" + p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?![\\p{L}\\p{M}])", "iu").exec(s);
+    if (!m) return esc(s);
+    var at = m.index + m[1].length, word = m[2];
+    var mid = solved ? '<b class="sf-pyword">' + esc(word) + "</b>"
+      : word.split(" ").map(function () { return '<span class="sf-blank" aria-hidden="true"></span>'; }).join(" ") + '<span class="sr">blank</span>';
+    return esc(s.slice(0, at)) + mid + esc(s.slice(at + word.length));
+  }
+  function sentenceMedia(q) {
+    var w = q.w, s = w.sentence, at = s.indexOf(w.hanzi), chars = Array.from(w.hanzi);
+    var boxes = '<span class="boxes n' + Math.min(chars.length, 8) + ' sf-gap">' + chars.map(function (c) {
+      return G.solved ? '<span class="tzg drop"><span>' + esc(c) + "</span></span>" : '<span class="tzg gap"><span></span></span>';
+    }).join("") + (G.solved ? "" : '<span class="sr">blank, ' + chars.length + " characters</span>") + "</span>";
+    return '<div class="sf">' +
+      '<p class="sf-zh" lang="zh-CN">' + esc(s.slice(0, at)) + boxes + esc(s.slice(at + w.hanzi.length)) + "</p>" +
+      '<p class="sf-py">' + pinyinBlank(w.sentencePinyin, w.pinyin, G.solved) + "</p>" +
+      (G.hint && !G.solved ? picOf(w, "g-hintpic sf-pic") : "") +
+      (G.solved ? '<button type="button" class="g-say sf-say" data-act="sfsay" data-hl="sfsay"><span class="listen-ic">' + IC.spkMid + '</span><span lang="zh-CN">听句子</span> Hear the sentence</button>' : "") +
+      "</div>";
   }
   /* Picker groups, in order. Ids not in GAMES yet are skipped. */
   var GROUPS = [
@@ -929,7 +982,7 @@
       G.solved = true; G.anim = { i: ci, type: "bounce" }; stopSpeech(); render(); chime();
       if (g.onRight) g.onRight(q); else sayWordSoon(q.w, 250);
       var nx = root.querySelector(".g-next"); if (nx) nx.focus({ preventScroll: true });
-      clearTimeout(gTimer); gTimer = setTimeout(gameNext, g.nextAfter || 1600);
+      if (g.nextAfter !== false) { clearTimeout(gTimer); gTimer = setTimeout(gameNext, g.nextAfter || 1600); } /* false: the game moves on itself */
     } else {
       q.firstTry = false; G.wrong.push(ci); G.anim = { i: ci, type: "wobble" }; render(); boop();
       var left = root.querySelector(".g-choice:not([disabled])"); if (left) left.focus({ preventScroll: true });
@@ -1446,6 +1499,7 @@
     spick: function (b) { spotPick(+b.dataset.i); },
     snone: spotNone,
     sfix: function (b) { spotFix(+b.dataset.i); },
+    sfsay: function () { var q = G.q[G.i]; if (q && q.w.sentence) { stopSpeech(); sayOne("sfsay", q.w.sentence); } },
     ghint: function () { if (G.phase !== "run") return; G.hint = true; render(); var c = root.querySelector(".g-choice:not([disabled])"); if (c) c.focus({ preventScroll: true }); },
     gnext: gameNext,
     gsay: function () { var q = G.q[G.i]; if (q) { stopSpeech(); sayOne("gsay", q.say || q.w.hanzi); } },

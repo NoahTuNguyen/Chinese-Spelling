@@ -323,6 +323,23 @@ there, so guessing doesn't work.
 - Keys: step 1 → 1…n pick a character, n+1 = 没有错; step 2 → 1/2/3. Number badges show on
   devices with a mouse. How-to: 哪个字写错了？ · Which character is wrong?
 
+**17 句子填空 Sentence fill-in** (认 Read group). Uses each word's `sentence` / `sentencePinyin`;
+words without a sentence are skipped and the game needs at least 3 (else the card says "This week
+needs more sentences to play"). Each sentence once, random order. A white card shows the sentence
+(Kai, 30 px on phones, 36 px from 768 px) with the word replaced by empty dashed 田字格 boxes, one per
+character, and under it the pinyin line with the word's syllables replaced by short green blanks,
+one per syllable. 3 choices: the word + 2 other words from the same list, the same length as the
+answer first (so the number of boxes doesn't give it away), never a word that already appears in
+the sentence; nearby lists only top up a short list. Under 1000 px the choices sit in one row of
+three; from 1000 px they stack beside the card (like the Picture quiz). 💡 提示 Hint shows the
+answer's picture (emoji if no `img`; no hint without either). Right: the usual blue + tick + bounce +
+chime, the word drops into the boxes, its pinyin turns `--good` blue, pinyin + English of the word
+appear, then the whole sentence is read aloud and the next question follows once it has been read
+(capped, in case speech never ends); 听句子 Hear the sentence replays it, 下一个 Next skips ahead.
+Wrong: boop, wobble, fade. Validator: every sentence contains its word exactly once and its
+`sentencePinyin` contains the word's pinyin as whole syllables. How-to: 选一选，填一填 · Pick the word
+that fits.
+
 **Stroke order (Hanzi Writer), self-hosted.** Hanzi Writer 3.7.3 (MIT) lives in
 `src/vendor/hanzi-writer/` (unmodified minified UMD build, its `LICENSE.txt`, a `VERSION` file with
 the SHA-256) and is loaded with a normal `<script>` tag from our own domain. Stroke data for only
