@@ -273,6 +273,12 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
     pauses while the tab is hidden. Bubbles are moved with `element.style.transform` (CSSOM,
     allowed by the CSP; no `style=""` in markup). Taps update the bubbles in place. Reduced
     motion: a still row that fades in. Score = rounds right on the first tap.
+  - 接一接 Catch it (`kind: "catch"`, `catchView`/`catchStart`/`catchFrame`, state `CT`): shares 泡泡's
+    start screen (`bubbleSetupView`, speed `catchSpeed`). 8 rounds; the word + up to 3 others fall in
+    3 lanes (`catchFreeLane` keeps them apart); basket lane `G.lane`, moved by lane buttons, drag
+    (`CTDRAG`, `touch-action: none` on `.ct-field` only), ←/→ or 1–3. Caught in the catch window above
+    the basket: right → chime + spoken + next round; wrong → boop, it falls again, round not first try.
+    Anything that falls past drops again. Reduced motion: 3 still words in the lanes, tap = catch.
   - 写一写 Write it (`kind: "write"`): each word once; spoken on show, 🔊 Hear again (Space).
     Small 田字格 row (current box yellow) + drawing box with NO outline. `G.ci` = character,
     `G.strokes` = strokes done, `G.cm` = misses, `G.ch` = needed help. 3 misses on a stroke →

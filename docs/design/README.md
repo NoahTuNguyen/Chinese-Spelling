@@ -340,6 +340,25 @@ Wrong: boop, wobble, fade. Validator: every sentence contains its word exactly o
 `sentencePinyin` contains the word's pinyin as whole syllables. How-to: 选一选，填一填 · Pick the word
 that fits.
 
+**18 接一接 Catch it** (听 Listen group). Start screen like 泡泡 (the same component): a little
+basket-and-falling-words picture, 接一接 Catch it, the how-to, speed 慢 Slow (default) / 中 Normal,
+开始 Start. 8 rounds (words repeat if the list is short, never the same word twice in a row). Each
+round the word is spoken (🔊 再听一次 / Space replays it), then the word and up to 3 others from the
+list drop in, staggered, one at a time per lane so they never overlap, and fall slowly down 3 lanes
+(dashed lines like the 田字格 cross). A pencil-yellow basket sits on the bottom edge of the field
+(the field ends above `--fsbot` and the safe area). Move it by tapping a lane (each lane is a full-height
+button), dragging sideways anywhere in the field (the field alone has `touch-action: none`), ←/→,
+or 1/2/3 to jump to a lane; the lane with the basket is lightly tinted and `aria-pressed`. Catch the
+word: it turns `--good` blue with a bounce in the basket, the others fade, chime, the word is
+spoken, pinyin + English appear, next round after ~1.9 s. Catch another word: soft boop, the basket
+wobbles, that word drops out and falls again later; no penalty except that round no longer counts as
+first try. If the word falls past the basket it drops again (as do the others), so there is no
+failing. `requestAnimationFrame` + transforms (CSSOM); paused while the tab is hidden. Reduced
+motion: no falling — the word + 2 others stand still, one per lane, and tapping a lane (or 1/2/3)
+moves the basket there and catches it (wrong = boop, that lane greys out). Score = rounds caught
+without catching another word first; first-try misses go to Tricky. How-to: 听一听，接一接 · Move the
+basket to catch the word you hear.
+
 **Stroke order (Hanzi Writer), self-hosted.** Hanzi Writer 3.7.3 (MIT) lives in
 `src/vendor/hanzi-writer/` (unmodified minified UMD build, its `LICENSE.txt`, a `VERSION` file with
 the SHA-256) and is loaded with a normal `<script>` tag from our own domain. Stroke data for only

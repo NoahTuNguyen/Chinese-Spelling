@@ -37,7 +37,7 @@
   var D = newDict();
   /* Play tab: phase picker → run → end. q = questions { w, choices[], firstTry }, i = current question,
      wrong = choice indexes tried and wrong, solved = answered right, hint = pinyin shown, anim = one-off animation. */
-  function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null, ci: 0, strokes: 0, cm: 0, ch: false, busy: false, step: "", sa: null }; }
+  function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null, ci: 0, strokes: 0, cm: 0, ch: false, busy: false, step: "", sa: null, lane: null }; }
   var G = newGame(), gTimer = null;
   var TOKEN = 0;
   /* Set just before the first render: voice detection can finish while this script is still starting up
@@ -573,7 +573,27 @@
           });
         }, 650);
       },
-      nextAfter: false }
+      nextAfter: false },
+    { id: "catchIt", cn: "接一接", en: "Catch it", sub: "Move the basket to catch the word you hear", kind: "catch",
+      how: ["听一听，接一接", "Move the basket to catch the word you hear"], region: "Catch the word you heard",
+      items: function (L) { return L ? L.words : []; }, min: 1,
+      notEnough: "This week has no words yet", ready: function () { return "8 rounds to play"; },
+      art: function () { return '<span class="gc-catch"><span class="ct-mini m1">星</span><span class="ct-mini m2">月</span>' + BASKET + "</span>"; },
+      hero: function () { return '<div class="ct-hero" aria-hidden="true"><span class="ct-mini m1">星</span><span class="ct-mini m2">月</span><span class="ct-mini m3">雨</span>' + BASKET + "</div>"; },
+      /* 8 rounds; words repeat if the list is short (never the same word twice in a row). Each round: the word
+         + up to 3 others falling (motion), or the word + 2 others standing in the 3 lanes (reduced motion). */
+      build: function (L) {
+        var rounds = [], pool = [];
+        while (rounds.length < 8) {
+          if (!pool.length) pool = shuffle(L.words);
+          var w = pool.shift();
+          if (rounds.length && rounds[rounds.length - 1].w.hanzi === w.hanzi && L.words.length > 1) { pool.push(w); continue; }
+          var others = otherWords(L, [w.hanzi], 3).map(function (o) { return o.hanzi; });
+          rounds.push({ w: w, answer: w.hanzi, falling: shuffle([w.hanzi].concat(others)), still: shuffle([w.hanzi].concat(others.slice(0, 2))), firstTry: true });
+        }
+        return rounds;
+      },
+      onShow: function (q) { sayWordSoon(q.w, 300); } }
   ];
   /* 缺字 look-alikes (data/lookalikes.json): character → [most common mix-up, others…]. */
   var LOOK = {};
@@ -728,6 +748,144 @@
       (G.solved ? '<button type="button" class="g-say sf-say" data-act="sfsay" data-hl="sfsay"><span class="listen-ic">' + IC.spkMid + '</span><span lang="zh-CN">听句子</span> Hear the sentence</button>' : "") +
       "</div>";
   }
+  /* ---------- 接一接 Catch it: words fall in 3 lanes, move the basket under the word you hear ---------- */
+  var catchSpeed = "slow"; /* start-screen choice, kept for this visit */
+  var BASKET = '<svg class="basket" viewBox="0 0 120 64" aria-hidden="true" focusable="false"><path class="bk-body" d="M10 16h100l-11 40a7 7 0 0 1-7 5H28a7 7 0 0 1-7-5z"/>' +
+    '<path class="bk-weave" d="M33 24l4 32M53 24l1 33M67 24l-1 33M87 24l-4 32M17 32h86M21 45h78"/><path class="bk-rim" d="M5 13h110"/></svg>';
+  var CT = null; /* motion state: { raf, last, items: [{ el, text, target, lane, y, w, h, state, wait }], frozen, drag } */
+  function catchView(g) {
+    var n = G.q.length, q = G.q[G.i], still = reducedMotion(), lane = G.lane == null ? 1 : G.lane;
+    var lanes = [0, 1, 2].map(function (k) {
+      var word = still ? q.still[k] : "", wrong = still && G.wrong.indexOf(k) >= 0, right = still && G.solved && word === q.answer;
+      return '<button type="button" class="ct-lane' + (wrong ? " nope" : "") + (right ? " got" : "") + '" data-act="clane" data-i="' + k + '"' + (still ? "" : ' aria-pressed="' + (lane === k) + '"') + (wrong || (still && G.solved) ? " disabled" : "") +
+        ' aria-label="' + (still ? (k + 1) + ". " + esc(word) + (right ? ", caught" : wrong ? ", not this one" : "") : "Lane " + (k + 1) + (lane === k ? ", basket here" : "")) + '">' +
+        '<span class="g-num" aria-hidden="true">' + (k + 1) + "</span>" +
+        (still ? '<span class="ct-item still n' + Math.min(Array.from(word).length, 4) + '" lang="zh-CN">' + esc(word) + "</span>" : "") + "</button>";
+    }).join("");
+    var items = still ? "" : q.falling.map(function (t, j) { return '<span class="ct-item n' + Math.min(Array.from(t).length, 4) + '" data-j="' + j + '" lang="zh-CN" aria-hidden="true">' + esc(t) + "</span>"; }).join("");
+    return '<div class="screen game g-catchIt">' + gameTop(n, G.i) + howto(g.how[0], g.how[1], "bub-how") +
+      '<div class="bub-bar"><button type="button" class="g-say" data-act="gsay" data-hl="gsay"><span class="listen-ic">' + IC.spkMid + '</span><span lang="zh-CN">再听一次</span> Hear again</button></div>' +
+      '<section class="ct-field' + (still ? " still" : "") + '" aria-label="' + esc(g.region) + '"><div class="ct-lanes" role="group" aria-label="' + (still ? "Pick the word you heard" : "Basket lanes") + '">' + lanes + "</div>" +
+      items + '<div class="ct-basket l' + lane + '">' + BASKET + "</div></section>" +
+      '<p class="g-reveal ct-reveal" role="status"></p></div>';
+  }
+  function catchLane(k) {
+    if (G.phase !== "run" || G.game !== "catchIt") return;
+    k = Math.max(0, Math.min(2, k));
+    if (reducedMotion()) { catchStill(k); return; }
+    if (G.lane === k) return;
+    G.lane = k;
+    var b = root.querySelector(".ct-basket"); if (b) { b.classList.remove("l0", "l1", "l2"); b.classList.add("l" + k); }
+    root.querySelectorAll(".ct-lane").forEach(function (el, i) { el.setAttribute("aria-pressed", i === k); el.setAttribute("aria-label", "Lane " + (i + 1) + (i === k ? ", basket here" : "")); });
+  }
+  /* Start the fall for the current round: items wait above the field and drop in, staggered, into free lanes. */
+  function catchStart() {
+    catchStop();
+    if (G.lane == null) G.lane = 1;
+    if (reducedMotion()) return;
+    var els = root.querySelectorAll(".ct-item"), q = G.q[G.i]; if (!els.length || !q) return;
+    var gap = catchSpeed === "normal" ? 0.9 : 1.4;
+    CT = { raf: 0, last: 0, frozen: false, items: [] };
+    for (var j = 0; j < els.length; j++) CT.items.push({ el: els[j], text: q.falling[j], target: q.falling[j] === q.answer, lane: -1, y: -200, w: els[j].offsetWidth, h: els[j].offsetHeight, state: "wait", wait: 0.5 + j * gap });
+    CT.raf = requestAnimationFrame(catchFrame);
+  }
+  function catchStop() { if (CT && CT.raf) cancelAnimationFrame(CT.raf); CT = null; }
+  /* A lane is free when nothing in it is still near the top (so words never overlap); prefer a new lane. */
+  function catchFreeLane(it) {
+    var free = [0, 1, 2].filter(function (l) { return !CT.items.some(function (o) { return o !== it && o.state === "fall" && o.lane === l && o.y < it.h * 1.6; }); });
+    if (!free.length) return -1;
+    var other = free.filter(function (l) { return l !== it.lane; });
+    var pick = other.length ? other : free;
+    return pick[Math.floor(Math.random() * pick.length)];
+  }
+  function catchFrame(t) {
+    var C = CT; if (!C) return;
+    var field = root.querySelector(".ct-field"), basket = root.querySelector(".ct-basket"); if (!field || !basket) { catchStop(); return; }
+    var dt = C.last ? Math.min(0.05, (t - C.last) / 1000) : 0; C.last = t;
+    var W = field.clientWidth, H = field.clientHeight, laneW = W / 3, bh = basket.offsetHeight, top = H - bh;
+    var speed = H * (catchSpeed === "normal" ? 0.15 : 0.085); /* fraction of the field height per second */
+    if (!C.frozen) C.items.forEach(function (it) {
+      if (it.state === "wait") {
+        it.wait -= dt; if (it.wait > 0) return;
+        var l = catchFreeLane(it); if (l < 0) return;
+        it.lane = l; it.y = -it.h; it.state = "fall"; it.el.classList.remove("gone", "nope");
+      }
+      if (it.state !== "fall") return;
+      it.y += speed * dt;
+      var bottom = it.y + it.h;
+      /* Catch window: the word's bottom between the basket rim and a little way into the basket. */
+      if (!it.passed && bottom >= top + 6 && bottom <= top + bh * 0.75 && it.lane === G.lane) { catchItem(it); return; }
+      if (!it.passed && bottom > top + bh * 0.75) it.passed = true;
+      if (it.y > H + 4) { it.state = "wait"; it.wait = 0.3 + Math.random() * 0.6; it.passed = false; it.el.classList.add("gone"); } /* fell past: drops again */
+    });
+    C.items.forEach(function (it) {
+      if (it.lane < 0) return;
+      var x = laneW * it.lane + (laneW - it.w) / 2;
+      it.el.style.transform = "translate3d(" + x.toFixed(1) + "px," + it.y.toFixed(1) + "px,0)";
+    });
+    C.raf = requestAnimationFrame(catchFrame);
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (!CT) return;
+    if (document.hidden) { cancelAnimationFrame(CT.raf); CT.raf = 0; }
+    else if (!CT.raf) { CT.last = 0; CT.raf = requestAnimationFrame(catchFrame); }
+  });
+  /* Caught the word: chime, the word is spoken, pinyin + English, next round. Caught another word: boop, it
+     drops out of the basket and falls again later; that round no longer counts as first try. */
+  function catchItem(it) {
+    var q = G.q[G.i], basket = root.querySelector(".ct-basket");
+    if (it.target) {
+      G.solved = true; CT.frozen = true; stopSpeech();
+      it.state = "caught"; it.el.classList.add("caught");
+      CT.items.forEach(function (o) { if (o !== it) o.el.classList.add("fade"); });
+      if (basket) { basket.classList.remove("bump"); void basket.offsetWidth; basket.classList.add("bump"); }
+      catchReveal(q); chime(); sayWordSoon(q.w, 350);
+      clearTimeout(gTimer); gTimer = setTimeout(catchNext, 1900);
+    } else {
+      q.firstTry = false;
+      it.state = "wait"; it.wait = 1.4; it.passed = false; it.el.classList.add("nope");
+      if (basket) { basket.classList.remove("shake"); void basket.offsetWidth; basket.classList.add("shake"); }
+      boop();
+    }
+  }
+  function catchReveal(q) { var rv = root.querySelector(".ct-reveal"); if (rv) rv.innerHTML = '<span class="g-r-py">' + esc(q.w.pinyin || "") + '</span><span class="g-r-en">' + esc(q.w.english || "") + "</span>"; }
+  /* Reduced motion: the words stand still in the lanes; tapping a lane (or 1–3) moves the basket and catches it. */
+  function catchStill(k) {
+    if (G.solved) return;
+    var q = G.q[G.i], word = q.still[k], el = root.querySelector('.ct-lane[data-i="' + k + '"]'); if (!el || G.wrong.indexOf(k) >= 0) return;
+    G.lane = k; var b = root.querySelector(".ct-basket"); if (b) b.className = "ct-basket l" + k;
+    if (word === q.answer) {
+      G.solved = true; stopSpeech(); el.classList.add("got"); el.setAttribute("aria-label", (k + 1) + ". " + word + ", caught");
+      root.querySelectorAll(".ct-lane").forEach(function (x) { x.disabled = true; });
+      catchReveal(q); chime(); sayWordSoon(q.w, 350);
+      var say = root.querySelector(".g-say"); if (say) say.focus({ preventScroll: true });
+      clearTimeout(gTimer); gTimer = setTimeout(catchNext, 1900);
+    } else {
+      q.firstTry = false; G.wrong.push(k); el.classList.add("nope"); el.disabled = true; el.setAttribute("aria-label", (k + 1) + ". " + word + ", not this one"); boop();
+      var left = root.querySelector(".ct-lane:not([disabled])"); if (left) left.focus({ preventScroll: true });
+    }
+  }
+  function catchNext() {
+    clearTimeout(gTimer); if (G.phase !== "run" || !G.solved) return;
+    stopSpeech();
+    if (G.i < G.q.length - 1) {
+      G.i++; G.wrong = []; G.solved = false; render(); /* render() restarts the fall */
+      var p = root.querySelector(".ct-lane:not([disabled])"); if (p && reducedMotion()) p.focus({ preventScroll: true });
+      curGame().onShow(G.q[G.i]);
+    } else { catchStop(); gameFinish(); }
+  }
+  /* Drag the basket: press anywhere in the field and slide sideways; the basket follows the finger's lane. */
+  var CTDRAG = null;
+  root.addEventListener("pointerdown", function (e) {
+    var f = e.target.closest && e.target.closest(".ct-field"); if (!f || f.classList.contains("still") || G.solved) return;
+    CTDRAG = e.pointerId; catchLane(Math.floor((e.clientX - f.getBoundingClientRect().left) / (f.clientWidth / 3)));
+  });
+  root.addEventListener("pointermove", function (e) {
+    if (CTDRAG !== e.pointerId) return;
+    var f = root.querySelector(".ct-field"); if (!f) { CTDRAG = null; return; }
+    catchLane(Math.floor((e.clientX - f.getBoundingClientRect().left) / (f.clientWidth / 3)));
+  });
+  ["pointerup", "pointercancel"].forEach(function (ev) { root.addEventListener(ev, function (e) { if (CTDRAG === e.pointerId) CTDRAG = null; }); });
   /* Picker groups, in order. Ids not in GAMES yet are skipped. */
   var GROUPS = [
     { id: "listen", cn: "听", en: "Listen", games: ["listenPick", "bubbles", "catchIt"] },
@@ -742,7 +900,8 @@
   function playView(L) {
     var g = curGame();
     if (G.phase === "run" && g && g.kind === "memory") return memoryView(g);
-    if (G.phase === "setup" && g && g.kind === "bubbles") return bubbleSetupView(g);
+    if (G.phase === "setup" && g && (g.kind === "bubbles" || g.kind === "catch")) return bubbleSetupView(g);
+    if (G.phase === "run" && g && g.kind === "catch") return catchView(g);
     if (G.phase === "run" && g && g.kind === "bubbles") return bubbleView(g);
     if (G.phase === "run" && g && g.kind === "write") return writeGameView(g);
     if (G.phase === "run" && g && g.kind === "spot") return spotView(g);
@@ -768,13 +927,13 @@
     return head + howto("选一个游戏", "Pick a game") + groups;
   }
   /* Start (or restart) a round of game id on the selected list. */
-  /* setup = true: games with a start screen (Bubble pop's speed choice) show it first. */
+  /* setup = true: games with a start screen (Bubble pop's and Catch it's speed choice) show it first. */
   function startGame(id, setup) {
     var L = curList(), g = gameById(id); if (!L || !g) return;
     if (g.items(L).length < g.min) return;
-    clearTimeout(gTimer); stopSpeech(); bubbleStop();
+    clearTimeout(gTimer); stopSpeech(); bubbleStop(); catchStop();
     G = newGame(); G.game = g.id; G.listId = L.id;
-    if (setup && g.kind === "bubbles") {
+    if (setup && (g.kind === "bubbles" || g.kind === "catch")) {
       G.phase = "setup"; render(); toTop();
       var sp = root.querySelector('.bub-speed[aria-pressed="true"]'); if (sp) sp.focus({ preventScroll: true });
       return;
@@ -783,7 +942,7 @@
     if (g.kind === "memory") { G.mm = g.build(L); G.q = []; }
     else G.q = g.build(L);
     render(); toTop(); /* render() also starts the bubbles */
-    var p = root.querySelector(".g-choice, .mm-card, .bub, .g-writeIt .g-say, .sp-box"); if (p) p.focus({ preventScroll: true });
+    var p = root.querySelector(".g-choice, .mm-card, .bub, .g-writeIt .g-say, .sp-box, .ct-lane[aria-pressed=\"true\"], .ct-field.still .ct-lane"); if (p) p.focus({ preventScroll: true });
     if (g.onShow) g.onShow(G.q[0]);
   }
 
@@ -791,12 +950,14 @@
   var bubbleSpeed = "slow"; /* start-screen choice, kept for this visit; Slow voice doesn't affect it */
   var BUB = null; /* animation state: { raf, last, items: [{ x, y, lane, phase }], h } */
   function reducedMotion() { return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }
+  /* Start screen with the speed choice, shared by 泡泡 Bubble pop and 接一接 Catch it. */
   function bubbleSetupView(g) {
-    function sp(id, cn, en) { return '<button type="button" class="bub-speed" data-act="bspeed" data-v="' + id + '" aria-pressed="' + (bubbleSpeed === id) + '"><span class="bb-cn" lang="zh-CN">' + cn + '</span><span class="bb-en">' + en + "</span></button>"; }
-    return '<div class="screen game g-bubbles bub-setup">' +
+    var cur = g.id === "catchIt" ? catchSpeed : bubbleSpeed;
+    function sp(id, cn, en) { return '<button type="button" class="bub-speed" data-act="bspeed" data-v="' + id + '" aria-pressed="' + (cur === id) + '"><span class="bb-cn" lang="zh-CN">' + cn + '</span><span class="bb-en">' + en + "</span></button>"; }
+    return '<div class="screen game g-' + g.id + ' bub-setup">' +
       '<div class="d-top"><button type="button" class="round-btn" data-act="gquit" aria-label="Back to games">' + IC.close + "</button></div>" +
-      '<div class="bub-hero" aria-hidden="true"><span class="bub-mini b1"></span><span class="bub-mini b2"></span><span class="bub-mini b3"></span></div>' +
-      '<h1 class="wd-cn" lang="zh-CN">泡泡</h1><p class="wd-en">Bubble pop</p>' + howto(g.how[0], g.how[1], "bub-how") +
+      (g.hero ? g.hero() : '<div class="bub-hero" aria-hidden="true"><span class="bub-mini b1"></span><span class="bub-mini b2"></span><span class="bub-mini b3"></span></div>') +
+      '<h1 class="wd-cn" lang="zh-CN">' + g.cn + '</h1><p class="wd-en">' + g.en + "</p>" + howto(g.how[0], g.how[1], "bub-how") +
       '<div class="bub-speeds" role="group" aria-label="Speed">' + sp("slow", "慢", "Slow") + sp("normal", "中", "Normal") + "</div>" +
       '<div class="screen-foot"><button type="button" class="big-btn yellow" data-act="bgo"><span class="bb-cn" lang="zh-CN">开始</span><span class="bb-en">Start</span></button></div></div>';
   }
@@ -1396,6 +1557,7 @@
     preloadPictures(L);
     /* Bubble pop: (re)start the float for the bubbles just drawn; stop it everywhere else. */
     if (S.mode === "play" && G.phase === "run" && G.game === "bubbles") bubbleStart(); else bubbleStop();
+    if (S.mode === "play" && G.phase === "run" && G.game === "catchIt") catchStart(); else catchStop();
     /* Stroke order: mount a writer into the drawing box just drawn; drop it everywhere else. */
     if (root.querySelector(".hw-target")) mountWriterForView(); else dropWriter();
   }
@@ -1491,7 +1653,8 @@
     },
     mode: function (b) { stopSpeech(); clearTimeout(gTimer); S.mode = b.dataset.m; S.focus = false; S.pic = false; S.write = null; S.clearArm = false; if (S.mode === "dict") D = newDict(); if (S.mode === "play") G = newGame(); render(); },
     gstart: function (b) { if (b.getAttribute("aria-disabled") === "true") return; audioCtx(); startGame(b.dataset.g, true); }, /* first tap unlocks Web Audio on iOS */
-    bspeed: function (b) { bubbleSpeed = b.dataset.v === "normal" ? "normal" : "slow"; render(); },
+    bspeed: function (b) { var v = b.dataset.v === "normal" ? "normal" : "slow"; if (G.game === "catchIt") catchSpeed = v; else bubbleSpeed = v; render(); },
+    clane: function (b) { catchLane(+b.dataset.i); },
     bgo: function () { audioCtx(); startGame(G.game); },
     bpick: function (b) { bubblePick(+b.dataset.i); },
     gpick: function (b) { gamePick(+b.dataset.i); },
@@ -1617,6 +1780,13 @@
       e.preventDefault();
       var to = idx < 0 ? 0 : Math.max(0, Math.min(items.length - 1, idx + (k === "ArrowRight" ? 1 : -1)));
       if (items[to]) items[to].focus();
+      return;
+    }
+    /* 接一接: ←/→ move the basket, 1/2/3 jump to a lane, Space hears the word again. */
+    if (S.mode === "play" && G.phase === "run" && G.game === "catchIt") {
+      if (space && !onBtn) { e.preventDefault(); ACT.gsay(); }
+      else if (k === "ArrowLeft" || k === "ArrowRight") { e.preventDefault(); if (!reducedMotion()) catchLane((G.lane == null ? 1 : G.lane) + (k === "ArrowLeft" ? -1 : 1)); else { var ls = Array.prototype.slice.call(root.querySelectorAll(".ct-lane")), li = ls.indexOf(a); var to = ls[Math.max(0, Math.min(2, (li < 0 ? 1 : li) + (k === "ArrowLeft" ? -1 : 1)))]; if (to) to.focus(); } }
+      else if (/^[1-3]$/.test(k)) { e.preventDefault(); if (!e.repeat) catchLane(+k - 1); }
       return;
     }
     if (S.mode === "play" && G.phase === "run" && G.game === "spotMistake") {

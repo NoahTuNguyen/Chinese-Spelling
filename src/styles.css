@@ -956,6 +956,49 @@ button.sp-box:focus-visible{z-index:3;outline-offset:-3px}
   .sf-py{font-size:20px}
 }
 
+/* ---------- 接一接 Catch it ---------- */
+.game-card.g-catchIt{background:var(--t4)}
+.basket{display:block;width:100%;height:auto;overflow:visible}
+.basket .bk-body{fill:var(--pencil);stroke:var(--pencil-shadow);stroke-width:3;stroke-linejoin:round}
+.basket .bk-weave{fill:none;stroke:var(--pencil-shadow);stroke-width:2.5;stroke-linecap:round;opacity:.7}
+.basket .bk-rim{fill:none;stroke:var(--pencil-shadow);stroke-width:6;stroke-linecap:round}
+.gc-catch,.ct-hero{position:relative;width:100%;height:100%;background:linear-gradient(180deg,var(--t4),var(--card) 85%)}
+.ct-hero{width:200px;height:120px;margin:10px auto 0;border-radius:24px}
+.ct-mini{position:absolute;padding:2px 6px;border-radius:9px;border:2px solid var(--line);background:var(--card);font-family:var(--kai);font-size:18px;line-height:1.1;color:var(--ink)}
+.ct-mini.m1{left:16%;top:12%}.ct-mini.m2{left:60%;top:30%}.ct-mini.m3{left:36%;top:4%}
+.gc-catch .basket,.ct-hero .basket{position:absolute;left:50%;bottom:6px;width:56px;translate:-50% 0}
+.ct-hero .basket{width:70px}
+/* The field: 3 lanes (full-height buttons), falling words on top, the basket on the bottom edge */
+.ct-field{--lw:calc(100cqi / 3);position:relative;width:100%;height:clamp(300px,54vh,560px);height:clamp(300px,54svh,560px);margin-top:12px;border-radius:28px;
+  container-type:inline-size;overflow:hidden;overflow:clip;background:linear-gradient(180deg,var(--t4),var(--card) 80%);touch-action:none;user-select:none;-webkit-user-select:none}
+.ct-lanes{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr)}
+.ct-lane{position:relative;margin:0;padding:0;border:none;border-radius:0;background:transparent;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ct-lane+.ct-lane{border-left:2px dashed var(--grid-dash)}
+.ct-lane[aria-pressed="true"]{background:linear-gradient(180deg,transparent 40%,rgba(246,195,67,.16))}
+.ct-lane:focus-visible{outline-offset:-6px;border-radius:24px}
+.ct-lane .g-num{left:50%;top:8px;translate:-50% 0}
+.ct-item{position:absolute;left:0;top:0;z-index:1;width:min(200px,calc(var(--lw) - 18px));min-height:64px;padding:6px 4px;border-radius:18px;border:2px solid var(--line);background:var(--card);
+  display:grid;place-items:center;font-family:var(--kai);font-size:min(36px,calc((var(--lw) - 34px) / 2.2));line-height:1.1;color:var(--ink);white-space:nowrap;
+  box-shadow:0 4px 0 var(--lift);pointer-events:none;transform:translate3d(0,-200px,0);will-change:transform;transition:opacity .25s ease}
+.ct-item.n3{font-size:min(32px,calc((var(--lw) - 30px) / 3.2))}.ct-item.n4{font-size:min(28px,calc((var(--lw) - 28px) / 4.2))}
+.ct-item.gone{opacity:0}
+.ct-item.nope{opacity:0;transition:opacity .45s ease .15s}
+.ct-item.fade{opacity:.25}
+.ct-item.caught{z-index:3;background:var(--good);border-color:var(--good);color:#FFFFFF;box-shadow:0 4px 0 #1F55B0;animation:g-bounce .45s cubic-bezier(.3,1.6,.5,1)}
+.ct-basket{position:absolute;left:0;bottom:4px;z-index:2;width:var(--lw);padding:0 max(12px,calc((var(--lw) - 150px) / 2));pointer-events:none;transition:translate .16s ease-out}
+.ct-basket.l1{translate:100% 0}.ct-basket.l2{translate:200% 0}
+.ct-basket.bump{animation:g-bounce .45s cubic-bezier(.3,1.6,.5,1)}
+.ct-basket.shake{animation:g-wobble .4s ease}
+.ct-reveal{margin-top:10px}
+/* Reduced motion: the words stand still in the 3 lanes; tap a lane to catch it */
+.ct-field.still{height:auto;min-height:260px}
+.ct-field.still .ct-lanes{position:relative;inset:auto;min-height:260px}
+.ct-item.still{position:relative;left:auto;top:auto;margin:0 auto 88px;transform:none;will-change:auto;animation:bub-fade .8s ease both}
+.ct-lane.nope .ct-item{opacity:.4}
+.ct-lane.got .ct-item{background:var(--good);border-color:var(--good);color:#FFFFFF;box-shadow:0 4px 0 #1F55B0}
+.ct-field.still .ct-basket{transition:none}
+.ct-field.still .ct-lane{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:34px 0 0}
+
 /* ---------- Game picker on phones: compact two-column cards (picture on top, no description) ---------- */
 @media (max-width:599px){
   .games{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -975,6 +1018,8 @@ button.sp-box:focus-visible{z-index:3;outline-offset:-3px}
   .bars span,.cf,.ws.on,.sticker-new.pop,.hear.speaking .hear-disc,.g-choice.bounce,.g-choice.wobble,.tzg.drop>span,.g-say.speaking .listen-ic{animation:none !important}
   .g-choice:active,.game-card:active{transform:none !important}
   .tzg.wobble,.sp-none.bounce,.sp-none.wobble,.pen path{animation:none !important}
+  .ct-item.caught,.ct-basket.bump,.ct-basket.shake{animation:none !important}
+  .ct-basket{transition:none !important}
   .sp-none:active{transform:none !important}
   /* Bubbles: still row with a gentle fade (opacity only), no pop/burst/wobble movement */
   .bub.still{animation:bub-fade .8s ease both !important}
