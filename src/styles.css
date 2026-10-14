@@ -885,6 +885,46 @@ body.full .main{max-width:none;padding:0}
   .wg:not(.solved) .wg-row{--box:72px}
 }
 
+/* ---------- 找错字 Spot the mistake ---------- */
+.game-card.g-spotMistake{background:var(--t0)}
+/* The teacher's-pen circle: one rough orange loop drawn round the wrong character */
+.pen{position:absolute;left:-14%;top:-14%;width:128%;height:128%;z-index:2;overflow:visible;pointer-events:none}
+.pen path{fill:none;stroke:var(--again);stroke-width:5;stroke-linecap:round;stroke-dasharray:300;animation:pen-draw .55s ease-out both}
+@keyframes pen-draw{from{stroke-dashoffset:300}}
+.gc-spot .pen path{stroke-width:6;animation:none}
+.screen.g-spotMistake{max-width:640px}
+.sp{container-type:inline-size;margin-top:4px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.sp-word{--box:min(120px,calc((100cqi - 16px) / var(--n)));margin:6px 0}
+.sp-word .tzg{border-width:3px}
+.sp-word .tzg+.tzg{border-left:none}
+button.sp-box{margin:0;padding:0;border-radius:0;font-family:var(--kai);cursor:pointer;-webkit-tap-highlight-color:transparent}
+button.sp-box:focus-visible{z-index:3;outline-offset:-3px}
+@media (hover:hover){button.sp-box:hover{background:var(--row-on)}}
+.sp-box .g-num{position:absolute;left:4px;top:4px;translate:none;width:24px;height:24px;font-family:var(--ui);font-size:12px;z-index:2}
+.tzg.wobble{animation:g-wobble .4s ease}
+.tzg.fixed>span{color:var(--good)}
+.sp-none{position:relative;min-height:72px;min-width:min(100%,300px);padding:8px 24px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);
+  display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 0 var(--lift);transition:transform .1s ease}
+.sp-none:active:not(:disabled){transform:translateY(2px)}
+.sp-none .g-num{left:16px}
+@media (hover:hover) and (pointer:fine){.sp-none{padding-left:60px}}
+.sp-none-cn{font-size:24px;font-weight:800}
+.sp-none-en{font-size:16px;font-weight:600;color:var(--muted)}
+.sp-tick{flex:none;width:34px;height:34px;border-radius:50%;background:var(--row-on);color:var(--grid-ink);display:grid;place-items:center}
+.sp-tick svg{width:20px;height:20px}
+.sp-none.right{background:var(--good);border-color:var(--good);color:#FFFFFF;box-shadow:0 4px 0 #1F55B0;cursor:default}
+.sp-none.right .sp-none-en,.sp-none.right .g-num{color:#FFFFFF}
+.sp-none.right .sp-tick{background:rgba(255,255,255,.22);color:#FFFFFF}
+.sp-none.bounce{animation:g-bounce .45s cubic-bezier(.3,1.6,.5,1)}
+.sp-none.wobble{animation:g-wobble .4s ease}
+.sp-prompt{margin:4px 0 0}
+.sp-choices{width:100%;max-width:420px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.sp-choice{min-height:92px;padding:8px}
+.sp-choice .g-hz{font-size:52px}
+.sp-choice .g-num{left:8px;top:8px;translate:none}
+.sp-choice .g-tick{right:6px;top:6px;translate:none;width:28px;height:28px}
+.sp .g-reveal{min-height:34px}
+
 /* ---------- Game picker on phones: compact two-column cards (picture on top, no description) ---------- */
 @media (max-width:599px){
   .games{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -903,6 +943,8 @@ body.full .main{max-width:none;padding:0}
   .word:has(.word-main:active),.word.speaking,.tile:active,.big-btn:active,.hear:active .hear-disc,.listen:active{transform:none !important}
   .bars span,.cf,.ws.on,.sticker-new.pop,.hear.speaking .hear-disc,.g-choice.bounce,.g-choice.wobble,.tzg.drop>span,.g-say.speaking .listen-ic{animation:none !important}
   .g-choice:active,.game-card:active{transform:none !important}
+  .tzg.wobble,.sp-none.bounce,.sp-none.wobble,.pen path{animation:none !important}
+  .sp-none:active{transform:none !important}
   /* Bubbles: still row with a gentle fade (opacity only), no pop/burst/wobble movement */
   .bub.still{animation:bub-fade .8s ease both !important}
   .bub.still.popped,.bub.wobble{animation:none !important}

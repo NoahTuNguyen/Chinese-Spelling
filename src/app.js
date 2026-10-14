@@ -37,7 +37,7 @@
   var D = newDict();
   /* Play tab: phase picker → run → end. q = questions { w, choices[], firstTry }, i = current question,
      wrong = choice indexes tried and wrong, solved = answered right, hint = pinyin shown, anim = one-off animation. */
-  function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null, ci: 0, strokes: 0, cm: 0, ch: false, busy: false }; }
+  function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null, ci: 0, strokes: 0, cm: 0, ch: false, busy: false, step: "", sa: null }; }
   var G = newGame(), gTimer = null;
   var TOKEN = 0;
   /* Set just before the first render: voice detection can finish while this script is still starting up
@@ -546,6 +546,13 @@
       art: function () { return '<span class="gc-miss gc-write"><span class="boxes"><span class="tzg"><span>写</span></span></span>' + IC.pencil + "</span>"; },
       /* Each word once, in random order. done[k] = { ok, helped } for each character once it's written. */
       build: function (L) { return shuffle(L.words).map(function (w) { return { w: w, chars: Array.from(w.hanzi), done: [], firstTry: false, helped: false }; }); },
+      onShow: function (q) { sayWordSoon(q.w, 400); } },
+    { id: "spotMistake", cn: "找错字", en: "Spot the mistake", sub: "Find the character that's wrong", kind: "spot",
+      how: ["哪个字写错了？", "Which character is wrong?"], region: "Which character is wrong?",
+      items: function (L) { return L ? L.words : []; }, min: 1,
+      notEnough: "This week has no words yet", ready: function (n) { return n + " words to check"; },
+      art: function () { return '<span class="gc-miss gc-spot"><span class="boxes"><span class="tzg"><span>大</span></span><span class="tzg circled"><span>人</span>' + PEN + "</span></span></span>"; },
+      build: function (L) { return spotQuestions(L); },
       onShow: function (q) { sayWordSoon(q.w, 400); } }
   ];
   /* 缺字 look-alikes (data/lookalikes.json): character → [most common mix-up, others…]. */
@@ -569,6 +576,105 @@
     if (picks.length < 2) otherWords(L, [w.hanzi], 12).forEach(function (o) { fromWords([o]); });
     return shuffle([ans].concat(picks));
   }
+
+  /* ---------- 找错字 Spot the mistake: tap the wrong character, then pick the right one ---------- */
+  /* The teacher's-pen circle drawn round the wrong character (one rough loop, orange --again). */
+  var PEN = '<svg class="pen" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path pathLength="300" d="M54 7C80 6 96 26 94 52C92 79 71 95 47 94C21 93 5 73 6 47C7 23 25 7 50 8C58 8 63 10 66 13"/></svg>';
+  /* Each word once, random order. About 1 in 5 (at least 1 when there are 3+ words) is shown with no
+     mistake. Otherwise one character (random position) is swapped for a look-alike from lookalikes.json:
+     the first (most common) look-alike more often than the others, never one that spells another list
+     word. Step 2 choices: the right character, the wrong one, and one more look-alike. */
+  function spotQuestions(L) {
+    var words = shuffle(L.words), n = words.length, clean = n >= 3 ? Math.max(1, Math.round(n / 5)) : 0, all = wordSet();
+    var noMistake = {}; shuffle(words.map(function (w, i) { return i; })).slice(0, clean).forEach(function (i) { noMistake[i] = true; });
+    return words.map(function (w, i) {
+      var chars = Array.from(w.hanzi), q = { w: w, chars: chars, shown: chars.slice(), pos: -1, wrong: "", choices: [], firstTry: true };
+      if (noMistake[i]) return q;
+      shuffle(chars.map(function (c, k) { return k; })).some(function (pos) {
+        function ok(c) { if (!c || c === chars[pos]) return false; var t = chars.slice(); t[pos] = c; return !all[t.join("")]; }
+        var la = (Array.isArray(LOOK[chars[pos]]) ? LOOK[chars[pos]] : []).filter(ok);
+        if (!la.length) return false;
+        var wrong = la[0] === (LOOK[chars[pos]] || [])[0] && Math.random() < 0.6 ? la[0] : la[Math.floor(Math.random() * la.length)];
+        var other = missingChoices(L, w, pos).filter(function (c) { return c !== chars[pos] && c !== wrong; })[0];
+        q.pos = pos; q.wrong = wrong; q.shown[pos] = wrong;
+        q.choices = shuffle([chars[pos], wrong].concat(other ? [other] : [])).map(function (c) { return { text: c }; });
+        return true;
+      });
+      return q;
+    });
+  }
+  /* G.step: "find" (tap the wrong character or 没有错 No mistake) → "fix" (pick the right character).
+     G.sa = { box | none | choice: index, type } plays a bounce/wobble once on the next render. */
+  function spotView(g) {
+    var n = G.q.length, q = G.q[G.i], m = q.chars.length, fixing = G.step === "fix", a = G.sa || {}; G.sa = null;
+    var mouse = '<span class="g-num" aria-hidden="true">';
+    var boxes = q.shown.map(function (c, k) {
+      var isPos = k === q.pos, fixed = G.solved && isPos, ch = fixed ? q.chars[k] : c;
+      var cls = "tzg sp-box" + (isPos && fixing ? " circled" : "") + (fixed ? " drop fixed" : "") + (a.box === k ? " " + a.type : "");
+      var inner = "<span>" + esc(ch) + "</span>" + (isPos && fixing ? PEN : "");
+      if (fixing || G.solved) return '<span class="' + cls + '">' + inner + "</span>";
+      return '<button type="button" class="' + cls + '" data-act="spick" data-i="' + k + '" aria-label="' + (k + 1) + ". " + esc(c) + '">' + mouse + (k + 1) + "</span>" + inner + "</button>";
+    }).join("");
+    var label = q.shown.join("");
+    var tools = "";
+    if (G.solved) tools = '<div class="g-tools"><button type="button" class="big-btn dark g-next" data-act="gnext"><span class="bb-cn" lang="zh-CN">' + (G.i < n - 1 ? "下一个" : "看结果") + '</span><span class="bb-en">' + (G.i < n - 1 ? "Next" : "Finish") + "</span>" + IC.arrowR + "</button></div>";
+    var none = "";
+    if (!fixing && (!G.solved || q.pos < 0)) {
+      var right = G.solved && q.pos < 0;
+      none = '<button type="button" class="sp-none' + (right ? " right" : "") + (a.none ? " " + a.type : "") + '" data-act="snone"' + (G.solved ? " disabled" : "") + ' aria-label="' + (m + 1) + '. No mistake' + (right ? ", right" : "") + '">' +
+        mouse + (m + 1) + '</span><span class="sp-none-cn" lang="zh-CN">没有错</span><span class="sp-none-en">No mistake</span><span class="sp-tick" aria-hidden="true">' + IC.tick + "</span></button>";
+    }
+    var choices = "";
+    if (fixing || (G.solved && q.pos >= 0)) {
+      choices = '<p class="g-prompt sp-prompt"><span class="howto-cn" lang="zh-CN">哪个字对？</span> Which one is right?</p><div class="sp-choices">' + q.choices.map(function (c, ci) {
+        var ok = G.solved && c.text === q.chars[q.pos], wrong = G.wrong.indexOf(ci) >= 0;
+        return '<button type="button" class="g-choice sp-choice' + (ok ? " right" : "") + (wrong ? " wrong" : "") + (a.choice === ci ? " " + a.type : "") + '" data-act="sfix" data-i="' + ci + '"' +
+          (wrong || G.solved ? " disabled" : "") + ' aria-label="' + (ci + 1) + ". " + esc(c.text) + (ok ? ", right" : "") + '">' + mouse + (ci + 1) + '</span><span class="g-hz" lang="zh-CN">' + esc(c.text) + "</span>" +
+          (ok ? '<span class="g-tick" aria-hidden="true">' + IC.tick + "</span>" : "") + "</button>";
+      }).join("") + "</div>";
+    }
+    return '<div class="screen game g-spotMistake">' + gameTop(n, G.i) + howto(g.how[0], g.how[1], "sp-how") +
+      '<section class="sp" aria-label="' + esc(g.region) + '">' +
+      '<button type="button" class="g-say" data-act="gsay" data-hl="gsay"><span class="listen-ic">' + IC.spkMid + '</span><span lang="zh-CN">再听一次</span> Hear again</button>' +
+      '<div class="boxes n' + Math.min(m, 8) + ' sp-word" role="group" aria-label="' + esc(fixing ? "The word, with the wrong character circled" : G.solved ? q.w.hanzi : "The word: " + label) + '">' + boxes + "</div>" +
+      none + choices +
+      '<p class="g-reveal" role="status">' + (G.solved ? '<span class="g-r-py">' + esc(q.w.pinyin || "") + '</span><span class="g-r-en">' + esc(q.w.english || "") + "</span>" : fixing ? "找到了！ You found it." : "") + "</p>" +
+      tools + "</section></div>";
+  }
+  function spotFocus(sel) { var e = root.querySelector(sel); if (e) e.focus({ preventScroll: true }); }
+  /* Step 1: tap a character. The swapped one → orange pen circle, chime, step 2. Any other → wobble + boop. */
+  function spotPick(k) {
+    if (G.phase !== "run" || G.solved || G.step === "fix") return;
+    var q = G.q[G.i]; if (k < 0 || k >= q.chars.length) return;
+    if (k === q.pos) { G.step = "fix"; render(); chime(); spotFocus(".sp-choice"); return; }
+    q.firstTry = false; G.sa = { box: k, type: "wobble" }; render(); boop(); spotFocus('.sp-box[data-i="' + k + '"]');
+  }
+  /* 没有错 No mistake: right only when nothing was swapped. */
+  function spotNone() {
+    if (G.phase !== "run" || G.solved || G.step === "fix") return;
+    var q = G.q[G.i];
+    if (q.pos < 0) { spotDone({ none: true, type: "bounce" }); spotFocus(".g-next"); return; }
+    q.firstTry = false; G.sa = { none: true, type: "wobble" }; render(); boop(); spotFocus(".sp-none");
+  }
+  /* Step 2: pick the right character. Right → it drops into the box, the word is spoken. Wrong → fades. */
+  function spotFix(ci) {
+    if (G.phase !== "run" || G.solved || G.step !== "fix") return;
+    var q = G.q[G.i], c = q.choices[ci]; if (!c || G.wrong.indexOf(ci) >= 0) return;
+    if (c.text === q.chars[q.pos]) { spotDone({ choice: ci, type: "bounce" }); spotFocus(".g-next"); return; }
+    q.firstTry = false; G.wrong.push(ci); G.sa = { choice: ci, type: "wobble" }; render(); boop();
+    spotFocus(".sp-choice:not([disabled])");
+  }
+  function spotDone(anim) {
+    var q = G.q[G.i]; G.solved = true; G.step = ""; G.sa = anim; stopSpeech(); render(); chime(); sayWordSoon(q.w, 450);
+    clearTimeout(gTimer); gTimer = setTimeout(gameNext, 2400);
+  }
+  /* Keys: step 1 → 1…n = a character, n+1 = No mistake; step 2 → 1/2/3. */
+  function spotKey(d) {
+    var q = G.q[G.i]; if (!q || G.solved) return;
+    if (G.step === "fix") spotFix(d - 1);
+    else if (d === q.chars.length + 1) spotNone();
+    else spotPick(d - 1);
+  }
   /* Picker groups, in order. Ids not in GAMES yet are skipped. */
   var GROUPS = [
     { id: "listen", cn: "听", en: "Listen", games: ["listenPick", "bubbles", "catchIt"] },
@@ -586,6 +692,7 @@
     if (G.phase === "setup" && g && g.kind === "bubbles") return bubbleSetupView(g);
     if (G.phase === "run" && g && g.kind === "bubbles") return bubbleView(g);
     if (G.phase === "run" && g && g.kind === "write") return writeGameView(g);
+    if (G.phase === "run" && g && g.kind === "spot") return spotView(g);
     if (G.phase === "run" && g) return choiceView(g);
     if (G.phase === "end" && g) return gameEndView(g);
     var head = L ? top(listHead(L)) : top('<h1 class="title" lang="zh-CN">玩一玩</h1>');
@@ -623,7 +730,7 @@
     if (g.kind === "memory") { G.mm = g.build(L); G.q = []; }
     else G.q = g.build(L);
     render(); toTop(); /* render() also starts the bubbles */
-    var p = root.querySelector(".g-choice, .mm-card, .bub, .g-writeIt .g-say"); if (p) p.focus({ preventScroll: true });
+    var p = root.querySelector(".g-choice, .mm-card, .bub, .g-writeIt .g-say, .sp-box"); if (p) p.focus({ preventScroll: true });
     if (g.onShow) g.onShow(G.q[0]);
   }
 
@@ -832,8 +939,8 @@
     clearTimeout(gTimer); if (G.phase !== "run" || !G.solved) return;
     stopSpeech();
     if (G.i < G.q.length - 1) {
-      G.i++; G.wrong = []; G.solved = false; G.hint = false; render();
-      var p = root.querySelector(".g-choice"); if (p) p.focus({ preventScroll: true });
+      G.i++; G.wrong = []; G.solved = false; G.hint = false; G.step = ""; G.sa = null; render();
+      var p = root.querySelector(".g-choice, .sp-box"); if (p) p.focus({ preventScroll: true });
       var g = curGame(); if (g.onShow) g.onShow(G.q[G.i]);
     } else gameFinish();
   }
@@ -1336,6 +1443,9 @@
     bpick: function (b) { bubblePick(+b.dataset.i); },
     gpick: function (b) { gamePick(+b.dataset.i); },
     mflip: function (b) { memoryFlip(+b.dataset.i); },
+    spick: function (b) { spotPick(+b.dataset.i); },
+    snone: spotNone,
+    sfix: function (b) { spotFix(+b.dataset.i); },
     ghint: function () { if (G.phase !== "run") return; G.hint = true; render(); var c = root.querySelector(".g-choice:not([disabled])"); if (c) c.focus({ preventScroll: true }); },
     gnext: gameNext,
     gsay: function () { var q = G.q[G.i]; if (q) { stopSpeech(); sayOne("gsay", q.say || q.w.hanzi); } },
@@ -1453,6 +1563,11 @@
       e.preventDefault();
       var to = idx < 0 ? 0 : Math.max(0, Math.min(items.length - 1, idx + (k === "ArrowRight" ? 1 : -1)));
       if (items[to]) items[to].focus();
+      return;
+    }
+    if (S.mode === "play" && G.phase === "run" && G.game === "spotMistake") {
+      if (space && !onBtn) { e.preventDefault(); ACT.gsay(); }
+      else if (/^[1-9]$/.test(k)) { e.preventDefault(); if (!e.repeat) spotKey(+k); }
       return;
     }
     if (S.mode === "play" && G.phase === "run" && G.game === "writeIt") { if (space && !onBtn) { e.preventDefault(); ACT.gsay(); } return; }

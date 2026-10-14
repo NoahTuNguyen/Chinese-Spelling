@@ -24,7 +24,7 @@ open a shared link, tap a word to hear it in Mandarin, and run a mock dictation.
 - `src/app.js` — the whole app (render functions + delegated `data-act` click handlers)
 - `src/styles.css` — design tokens on `:root` (light; dark under `[data-theme="dark"]`), 田字格 boxes, components
 - `src/data/lists.json` — ALL spelling-list data
-- `src/data/lookalikes.json` — character → 2–4 look-alike characters (first = most common mix-up), for 缺字
+- `src/data/lookalikes.json` — character → 2–4 look-alike characters (first = most common mix-up), for 缺字 and 找错字
 - `src/img/` — one 640×480 WebP illustration per word, named by toneless pinyin (`caihong.webp`)
 - `src/img/brand/` — brand artwork (see Brand): `banner-phone.webp` (1036×676), `banner-wide.webp`
   (1024×338) for the welcome screen, `og-image.jpg` (1200×630) for link previews
@@ -250,6 +250,11 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
     Wrong choices (`missingChoices`): always the FIRST look-alike from `data/lookalikes.json`,
     one more at random, never one that spells another list word; fallback = characters from
     the list's other words.
+  - 找错字 Spot the mistake (`kind: "spot"`, `spotQuestions`/`spotView`): the word in 田字格 with one
+    character swapped for a look-alike (缺字 rules; ~1 in 5 words shown with no mistake, at least one
+    when there are 3+ words). `G.step` "find" → tap the wrong character (orange pen circle, `PEN`) or
+    没有错 No mistake; "fix" → pick the right character from 3 (right, the wrong one, one more
+    look-alike). First try = both steps right. Keys 1…n / n+1 (没有错), then 1/2/3.
   - 翻翻乐 Memory match (`kind: "memory"`, `G.mm`): picture card ↔ characters card for up to 6
     words with an `img` or emoji; flips update the cards in place (no re-render) so the flip
     animates and focus stays. Score = moves (best = fewest, `saveBest(..., lower)`); stars

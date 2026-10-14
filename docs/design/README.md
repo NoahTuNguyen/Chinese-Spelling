@@ -303,6 +303,26 @@ buttons (Tab/Enter, keys 1–4). `requestAnimationFrame` + transforms; paused wh
 hidden. Reduced motion: bubbles sit still in a row and fade in. Score = rounds right on the first
 tap. How-to: 听一听，戳泡泡 · Listen, then pop the right bubble.
 
+**16 找错字 Spot the mistake** (写 Write group). Every word in the list once, random order; the
+word is spoken at the start and 🔊 再听一次 replays it (Space too). The word is shown in big 田字格
+boxes (up to 120 px) with ONE character swapped for a look-alike from `lookalikes.json`, using the
+缺字 rules: the first (most common) look-alike is picked more often, and a swap that would spell
+another word from any list is never used. About 1 in 5 questions (at least one when the list has
+3+ words) show the word with NO mistake, and a big 没有错 No mistake ✓ button (≥ 72 px) is always
+there, so guessing doesn't work.
+- Step 1: tap the wrong character. Tapping a correct character, or 没有错 when there is a mistake,
+  is a gentle wobble + boop. The wrong one gets a hand-drawn orange (`--again`) pen circle, like a
+  teacher's marking (drawn in with a short stroke animation; still with reduced motion), plus a chime
+  and "找到了！ You found it.".
+- Step 2: 哪个字对？ Which one is right? — 3 big character buttons: the right character, the wrong one
+  and one more look-alike. Wrong = boop, wobble, fade. Right = blue + tick + bounce + chime; the
+  character drops into the box (shown in `--good` blue), the whole word is spoken, pinyin + English
+  appear, next question after ~2.4 s (or 下一个 Next).
+- No-mistake questions: 没有错 turns blue with the tick, chime, the word is spoken.
+- A star (first try) needs both steps right first time. Words not right first time go to Tricky.
+- Keys: step 1 → 1…n pick a character, n+1 = 没有错; step 2 → 1/2/3. Number badges show on
+  devices with a mouse. How-to: 哪个字写错了？ · Which character is wrong?
+
 **Stroke order (Hanzi Writer), self-hosted.** Hanzi Writer 3.7.3 (MIT) lives in
 `src/vendor/hanzi-writer/` (unmodified minified UMD build, its `LICENSE.txt`, a `VERSION` file with
 the SHA-256) and is loaded with a normal `<script>` tag from our own domain. Stroke data for only
