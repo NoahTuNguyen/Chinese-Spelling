@@ -29,7 +29,9 @@
   applyTheme();
   /* focus/fi: Learn's one-word-at-a-time view and its word index. pic/pi: the picture card and its word index
      (picFrom: "learn" grid or "focus" mode, where closing it returns to). */
-  var S = { lists: [], cur: null, mode: "learn", focus: false, fi: 0, pic: false, pi: 0, picFrom: "learn", write: null, playing: false, clearArm: false, resetArm: false, loading: true, loadError: "" };
+  var S = { lists: [], cur: null, mode: "learn", focus: false, fi: 0, pic: false, pi: 0, picFrom: "learn", write: null, playing: false, clearArm: false, resetArm: false, loading: true, loadError: "", welcome: false };
+  /* Welcome screen: shown once per device (tx-welcomed), and again from Parent corner → About this app. */
+  S.welcome = !lsGet("tx-welcomed", false);
   /* Dictation: phase idle → run → check → done. src "list" | "tricky"; retest = practising missed words again. */
   function newDict() { return { src: "list", listId: null, retest: false, queue: [], i: 0, phase: "idle", marks: {}, result: null }; }
   var D = newDict();
@@ -255,6 +257,22 @@
   function listHead(L, small) {
     return (!small && L.id === nextId() ? '<span class="pill-week"><span lang="zh-CN">本周</span> This week</span>' : "") +
       '<div class="title-row">' + titlePicker(L, small) + stickerPill() + backPill(small ? "f-back" : "") + "</div>";
+  }
+
+  /* ---------- welcome (first visit on a device, and from Parent corner → About this app) ---------- */
+  /* The banner is the only picture; nothing is ever written on top of it. Two crops: a taller one for
+     phones, a wide one from 600px. width/height on both keep the page from jumping while it loads. */
+  function welcomeView() {
+    return '<div class="screen welcome">' +
+      '<picture class="wel-art">' +
+      '<source media="(min-width:600px)" srcset="img/brand/banner-wide.webp" width="1024" height="338">' +
+      '<img src="img/brand/banner-phone.webp" width="1036" height="676" decoding="async" ' +
+      'alt="Cartoon children under a starry sky pointing at a big star"></picture>' +
+      '<h1 class="wd-cn wel-cn" lang="zh-CN">欢迎！</h1>' +
+      '<p class="wd-en">Welcome to <span lang="zh-CN">听写</span> practice</p>' +
+      '<p class="wel-sub">Listen, learn and practise your weekly <span lang="zh-CN">听写</span> words</p>' +
+      '<div class="screen-foot"><button type="button" class="big-btn yellow" data-act="welstart">' +
+      '<span class="bb-cn" lang="zh-CN">开始</span><span class="bb-en">Start</span>' + IC.arrowR + "</button></div></div>";
   }
 
   /* ---------- Learn ---------- */
@@ -1097,7 +1115,8 @@
       '<section class="pc-sec" aria-labelledby="pc-h-cards"><h3 id="pc-h-cards">On the word cards</h3><div class="sw-grid">' +
       sw("py", "Pinyin") + sw("pics", "Pictures") + sw("en", "English") + sw("slow", "Slow voice") + "</div></section>" +
       '<section class="pc-sec" aria-labelledby="pc-h-screen"><h3 id="pc-h-screen">Sound and screen</h3><div class="sw-grid">' + sw("sound", "Sounds") + sw("dark", "Dark theme") + "</div></section>" +
-      '<div class="pc-tip"><b>How it works</b><p>Learn: tap a word to hear it. Dictation: each word plays twice; she writes on paper, then checks with the faces. Missed words go to Tricky.</p></div>' + homeTip() +
+      '<div class="pc-tip"><b>How it works</b><p>Learn: tap a word to hear it. Dictation: each word plays twice; she writes on paper, then checks with the faces. Missed words go to Tricky.</p>' +
+      '<button type="button" class="pc-about" data-act="about">' + IC.star + "About this app</button></div>" + homeTip() +
       '<section class="pc-sec pc-credits" aria-labelledby="pc-h-credits"><h3 id="pc-h-credits">Credits</h3>' +
       "<p>Stroke order: Hanzi Writer (MIT). Stroke data: Make Me a Hanzi / Arphic Technology, Arphic Public License.</p>" +
       '<p class="pc-links"><a href="vendor/hanzi-writer/LICENSE.txt" target="_blank" rel="noopener">Hanzi Writer licence (MIT)</a>' +
@@ -1188,8 +1207,10 @@
     L.words.forEach(function (w) { if (w.img) { var im = new Image(); im.decoding = "async"; im.src = w.img; } });
   }
   function render() {
-    var full = (S.mode === "dict" && D.phase !== "idle") || (S.mode === "learn" && (S.focus || S.pic || S.write)) || (S.mode === "play" && G.phase !== "picker");
+    var full = S.welcome || (S.mode === "dict" && D.phase !== "idle") || (S.mode === "learn" && (S.focus || S.pic || S.write)) || (S.mode === "play" && G.phase !== "picker");
     document.body.classList.toggle("full", full);
+    /* The welcome screen needs no data, so it shows while the lists are still loading. */
+    if (S.welcome) { var wk = focusKey(root); root.innerHTML = '<main class="main">' + welcomeView() + "</main>"; refocus(root, wk); bubbleStop(); dropWriter(); return; }
     if (S.loading) { root.innerHTML = appbar() + '<main class="main"><p class="loading">Loading spelling lists…</p></main>'; return; }
     if (S.loadError) { root.innerHTML = appbar() + '<main class="main"><p class="banner">' + esc(S.loadError) + "</p></main>"; return; }
     var k = focusKey(root), L = curList(), v;
@@ -1275,6 +1296,15 @@
   }
   var lastPointer = "mouse";
   var ACT = {
+    /* Welcome: 开始 Start remembers the device has seen it and goes to Learn. */
+    welstart: function () {
+      lsSet("tx-welcomed", true); S.welcome = false; render(); toTop();
+      var t = root.querySelector(".title-btn") || root.querySelector("[data-act]"); if (t) t.focus({ preventScroll: true });
+    },
+    about: function () {
+      closeParent(); S.welcome = true; stopSpeech(); render(); toTop();
+      var b = root.querySelector('[data-act="welstart"]'); if (b) b.focus({ preventScroll: true });
+    },
     weeks: function (b) { openWeeks(b); },
     wsclose: closeWeeks,
     /* Pick a week: select it, close the sheet, stay on the same tab (Dictation goes back to its start screen). */
@@ -1378,7 +1408,9 @@
   /* Keyboard shortcuts: Space = hear, ←/→ = move between words, Enter = next word in dictation.
      A focused button keeps its own Space/Enter except where noted. */
   document.addEventListener("keydown", function (e) {
-    if (pc.open || ws.open || e.ctrlKey || e.metaKey || e.altKey || S.loading) return;
+    if (pc.open || ws.open || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (S.welcome) { if (e.key === "Escape") { e.preventDefault(); ACT.welstart(); } return; } /* Esc = 开始 Start */
+    if (S.loading) return;
     var a = document.activeElement, act = a && a.dataset ? a.dataset.act : null, onBtn = !!(a && a.tagName === "BUTTON");
     var k = e.key, space = k === " " || k === "Spacebar";
     if (S.mode === "learn" && S.write) {

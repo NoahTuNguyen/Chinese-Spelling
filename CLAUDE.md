@@ -26,6 +26,8 @@ open a shared link, tap a word to hear it in Mandarin, and run a mock dictation.
 - `src/data/lists.json` — ALL spelling-list data
 - `src/data/lookalikes.json` — character → 2–4 look-alike characters (first = most common mix-up), for 缺字
 - `src/img/` — one 640×480 WebP illustration per word, named by toneless pinyin (`caihong.webp`)
+- `src/img/brand/` — brand artwork (see Brand): `banner-phone.webp` (1036×676), `banner-wide.webp`
+  (1024×338) for the welcome screen, `og-image.jpg` (1200×630) for link previews
 - `src/manifest.webmanifest`, `src/icons/` — Add to Home Screen (icons 192, 512 incl. maskable,
   180 apple-touch-icon). `*.png` is gitignored except `src/icons/*.png`.
 - `src/lists-logic.js` — date rules: `pickDefaultList(lists, now)`, `nextUpcoming`, `isPast`,
@@ -126,6 +128,20 @@ On this Windows machine `python3` is only the Store stub; use `py -3` instead.
 - Only the current list's pictures are preloaded; all other `<img>` use `loading="lazy"`.
   The temporary service worker keeps the last good copy of each picture for offline use.
 
+## Brand (`src/img/brand/`)
+- Same illustration style as the word pictures: starry night-blue sky, pencil-yellow star,
+  children in yellow and blue. Generated artwork, never photos.
+- `banner-phone.webp` (1036×676) and `banner-wide.webp` (1024×338): the welcome screen's banner,
+  chosen with `<picture>` + `<source media="(min-width:600px)">`, `width`/`height` always set
+  (no layout shift), capped at `max-width: 720px` so it is never upscaled.
+- **Never put text over the banner**; the welcome screen's words go under it.
+- `og-image.jpg` (1200×630): link previews only — it has "听写 practice" drawn into the image.
+  The `og:*` / `twitter:card` tags in `src/index.html` must use absolute
+  `https://chinese-spelling.manhtu.dev/…` URLs (WhatsApp and iMessage don't resolve relative ones);
+  they are metadata, so the CSP is not involved. `.gitignore` excludes `*.jpg` but allows
+  `src/img/brand/*.jpg`. After deploying a change here, re-check the preview by pasting the URL
+  into WhatsApp (previews are cached by each service).
+
 ## Adding lists from a photo of the spelling sheet
 When the user gives photos of a 听写 sheet:
 1. Extract every COMPLETE section (heading 听写（N）, date line, numbered words).
@@ -204,6 +220,11 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   Dictation start screen, Play's game picker and Tricky; hidden while a dictation or game round
   runs and on the picture card.
   "回到本周 Back to this week" shows when the chosen list isn't the default.
+- Welcome screen (`S.welcome`): first visit on a device (`tx-welcomed`) and from Parent corner →
+  About this app. Full screen, no bars, shown even while lists.json is still loading: brand banner
+  (`<picture>`, phone crop under 600px, wide crop above, max-width 720px), 欢迎！ / Welcome to 听写
+  practice, one line, big yellow 开始 Start (Esc does the same) which sets `tx-welcomed` and opens
+  Learn. Never write text over the banner.
 - Screens: Learn (title picker, word cards, Play all tile, One by one → focus mode,
   Write → a Write session over the list),
   Dictation (Hear again, empty 田字格, Next), Check your paper (two faces per word; Done
@@ -242,8 +263,9 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
     needed help go to Tricky.
 - Parent corner: `<dialog>`; press-and-hold 1.5 s on touch, click/keyboard elsewhere.
   Holds the Pinyin/Pictures/English/Slow voice + Sounds/Dark theme switches, how it
-  works, Add to Home Screen tip (phones/tablets), Credits (Hanzi Writer MIT, stroke data Arphic
-  Public License, links to both licence files), clear tricky words, reset stickers.
+  works + About this app (reopens the welcome screen), Add to Home Screen tip (phones/tablets),
+  Credits (Hanzi Writer MIT, stroke data Arphic Public License, links to both licence files),
+  clear tricky words, reset stickers.
 - Every screen has one short `.howto` line (bilingual on kid screens); keep them accurate
   when changing a flow. Labels are simple Chinese + small English.
 - Keyboard: Space hears, ←/→ move between words, Enter is next in dictation. Visible
@@ -253,6 +275,7 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   0 correct still says "Good try!".
 
 ## Device storage (localStorage, wrapped in try/catch)
+- `tx-welcomed`: `true` once 开始 Start on the welcome screen has been tapped on this device.
 - `tx-prefs`: `{ slow, py, en, pics, dark, sound }` (English and dark default off, sound on).
 - `tx-games`: `{ "pictureQuiz": { "<listId>": { best, total } } }`; best first-try score per list.
 - `tx-tricky`: `{ "<hanzi>": { misses, streak, pinyin, english, pic, img } }`; a word leaves

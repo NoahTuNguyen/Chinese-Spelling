@@ -248,6 +248,10 @@ body.full .tabs{display:none}
 .pc-tip b{display:block;font-weight:800}
 .pc-tip p{margin:0}
 .pc-tip.home{background:var(--row-on)}
+/* "About this app" reopens the welcome screen */
+.pc-about{min-height:44px;margin-top:10px;padding:0 14px 0 10px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);
+  display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
+.pc-about svg{width:18px;height:18px;color:var(--pencil-shadow)}
 .pc-tip p b{display:inline;font-weight:800}
 .share-ic{display:inline-block;vertical-align:-3px;color:var(--good)}
 .pc-credits p{margin:0 0 6px;font-size:13px;font-weight:500;color:var(--muted);line-height:1.45}
@@ -344,6 +348,28 @@ body.full .main{max-width:none;padding:0}
 .big-btn.dark .bb-en{opacity:.85}
 .big-btn.white .bb-cn{font-size:18px}
 .big-btn.white .bb-en{color:var(--muted)}
+
+/* ---------- Welcome (first visit, and Parent corner → About this app) ---------- */
+/* Brand banner on top, words under it — never text over the picture. margin-top:auto here and on
+   .screen-foot share the spare height, so the card sits in the middle of tall screens. */
+.screen.welcome{max-width:760px;align-items:center;text-align:center} /* wide enough for the 720px banner */
+.wel-art{display:block;width:100%;max-width:720px;margin:auto auto 0} /* max-width: the 1024px-wide art never has to stretch */
+.wel-art img{display:block;width:100%;height:auto;border-radius:24px;background:var(--card);box-shadow:0 4px 0 var(--lift)}
+.welcome .wd-cn{margin-top:20px}
+.welcome .wd-en [lang]{font-family:var(--kai);font-weight:500;font-size:24px}
+.wel-sub{margin:10px auto 0;max-width:34ch;font-size:17px;font-weight:600;line-height:1.4;color:var(--muted)}
+.wel-sub [lang]{font-family:var(--kai);font-size:21px;color:var(--ink)}
+.welcome .screen-foot{max-width:420px}
+/* From 768px the whole block is centred instead of the button sitting low: there is no thumb to
+   reach on a tablet or desktop, and a 1180px-tall screen would leave a big gap under the words. */
+@media (min-width:768px){
+  .screen.welcome{justify-content:center}
+  .wel-art{margin-top:0}
+  .welcome .wd-cn{margin-top:26px}
+  .welcome .screen-foot{margin-top:30px}
+  .wel-sub{font-size:19px}
+  .wel-art img{border-radius:28px}
+}
 
 /* Dictation start (Dictation tab) */
 .start{max-width:520px;display:flex;flex-direction:column;align-items:stretch;gap:12px}

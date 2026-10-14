@@ -37,6 +37,29 @@ CSP blocks inline `style=""`. Turn them into classes and tokens in `styles.css`.
   toolbar draws over at the end of a scrolling page.
   Same rule for heights measured in `vh` (bubble field, drawing box): give an `svh` line after the `vh` one.
 
+## Brand
+Three generated illustrations in `src/img/brand/` (flat children's picture-book style, same palette
+as the word pictures: starry night-blue sky, pencil-yellow star, children in yellow and blue):
+
+| File | Size | Used for |
+|---|---|---|
+| `banner-phone.webp` | 1036×676 | welcome screen under 600 px (taller crop) |
+| `banner-wide.webp` | 1024×338 | welcome screen from 600 px (wide crop) |
+| `og-image.jpg` | 1200×630 | link preview only (has the title drawn into it) |
+
+- **Never put text over the banner.** The welcome screen writes everything under it; only `og-image.jpg`
+  carries lettering, because a link preview is one flat image.
+- The banner is a `<picture>`: `<source media="(min-width:600px)">` for the wide crop, the phone crop as
+  the `<img>` fallback. Both carry `width`/`height` so the page doesn't jump while it loads, and the
+  element is capped at `max-width: 720px`, under each file's natural width, so it never looks soft.
+- `alt="Cartoon children under a starry sky pointing at a big star"`.
+- **Link preview** (`src/index.html` head): `og:title` 听写 practice, `og:description` "Tap-to-hear
+  practice for weekly Chinese 听写 spelling lists", `og:type` website, `og:url` and `og:image` as
+  absolute `https://chinese-spelling.manhtu.dev/…` URLs (WhatsApp and iMessage won't follow relative
+  ones), `og:image:width`/`height` 1200×630, `og:image:alt`, `twitter:card` summary_large_image.
+  These are metadata, not requests from the page, so the CSP (`img-src 'self' data:`) is unaffected.
+- `*.jpg` is gitignored (spelling-sheet photos); `!src/img/brand/*.jpg` lets the preview image in.
+
 ## Design tokens
 Colors (light theme; add a dark theme with the same roles, tuned for contrast):
 
@@ -108,6 +131,13 @@ yellow buttons have a 4–5 px solid bottom shadow (`--pencil-shadow`) for a tac
 - **Parent button**: gear, 48 px circle, caption "Parents: hold".
 
 ## Screens and behaviour
+**0 Welcome.** First visit on a device only (`tx-welcomed` in localStorage), before Learn, full screen
+with no tab bar: the brand banner, then 欢迎！ / "Welcome to 听写 practice", one line
+("Listen, learn and practise your weekly 听写 words") and a big yellow 开始 Start button that
+remembers the device and opens Learn (Esc does the same). It needs no list data, so it shows while
+`lists.json` is still loading. Parent corner → "About this app" brings it back at any time.
+On phones the button sits low (thumb reach); from 768 px the whole block is centred.
+
 **1 Learn.** Header: 本周 This week pill (only when showing the next upcoming list),
 title picker 听写（N） ▾ with its date line, sticker count pill (+ Back to this week pill when
 another list is chosen). No separate sticker strip, so the word cards sit right under the
@@ -147,6 +177,7 @@ Contents:
 - Sound and screen: Sounds (on; game chime/boop only, words are still spoken), Dark theme (off).
 - How it works (short paragraph) + on iPhone/iPad: "Add to Home Screen so stickers
   aren't cleared" with brief steps.
+- "About this app": reopens the welcome screen (screen 0).
 - Clear tricky words on this device (two-tap confirm). Optionally Reset stickers.
 - Credits: Hanzi Writer (MIT) and the stroke data (Make Me a Hanzi / Arphic Technology, Arphic
   Public License), with links to both licence files.
@@ -315,6 +346,7 @@ omit it and the card simply shows no picture). Update `scripts/validate_lists.py
 it (optional string). Mockups show hand-drawn SVG pictures; the app uses the emoji.
 
 ## Device storage (localStorage, no server)
+- `tx-welcomed`: `true` once the welcome screen's 开始 Start has been tapped on this device
 - `tx-prefs`: `{ slow, py, en, pics, dark, sound }`
 - `tx-tricky`: unchanged (Dictation and the picture quiz both add to it)
 - `tx-games`: `{ "pictureQuiz": { "<listId>": { "best": 4, "total": 5 } } }`: best first-try

@@ -9,5 +9,6 @@ photos/
 *.jpeg
 *.heic
 *.png
-# App icons are generated artwork, not photos.
+# App icons and brand artwork are generated illustrations, not photos.
 !src/icons/*.png
+!src/img/brand/*.jpg
