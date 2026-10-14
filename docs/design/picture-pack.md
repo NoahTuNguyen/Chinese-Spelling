@@ -37,7 +37,7 @@ Generated images are used under the generator's terms; no attribution file is ne
 | 十九 | 用水 | yongshui.webp |
 | 十九 | 环境 | huanjing.webp |
 | 十九 | 垃圾 | laji.webp |
-| 二十 | 夜空 | (pending: use the emoji fallback for now) |
+| 二十 | 夜空 | yekong.webp |
 | 二十 | 神话 | shenhua.webp |
 | 二十 | 航天 | hangtian.webp |
 | 二十 | 外星人 | waixingren.webp |
@@ -64,7 +64,3 @@ I'm making picture cards for a 6–8 year old learning Chinese words. For every 
 Keep the same style for every image in this chat. Reply with just the image. Ready?
 
 Then one message per word: `Image: <scene description>. One picture only, no text.`
-
-## Still to do
-- 夜空 (yekong.webp): a night sky seen from the ground — wide starry sky, low dark hills
-  at the bottom, no people, no telescope, no moon, no planets.
