@@ -294,7 +294,7 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
   - 小故事 Story time (`kind: "story"`, `storyView`, `STORIES` from `data/stories.json`, loaded after
     the first render and normalised to NFC by `nfcDeep`): `G.sv` "read" → the story with the week's
     words coloured, underlined, tappable (`storySegments`, longest word first), 听故事 reads it sentence
-    by sentence (`storyPlay`, `.reading`), Pinyin (on) / English (off) toggles (`storyPy`/`storyEn`);
+    by sentence (`storyPlay`, `.reading`), Pinyin / English toggles, both off by default (`storyPy`/`storyEn`);
     找一找 → "find": plain text (no pinyin, colour, underline or numbers), each week word once, tap it
     (`storyWord`); other text → `storyNudge` via `pointerup` (iOS sends no click on plain text), no
     penalty. 💡 `storyHint`: `G.hl` 1 = all pinyin for 5 s (`G.pyShow`), 2 = again + `.st-under`; any

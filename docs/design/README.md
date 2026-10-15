@@ -379,7 +379,7 @@ when it loads.
   `lists.json` and `stories.json` in Baloo 2 and in `--font-pinyin` side by side, plus a tone-mark
   sampler at each weight, and flags strings that aren't NFC — open it in Chrome and Safari to check.
 - **Reading** (how-to 听故事，读一读 · Listen and read along): ✕, 小故事, a yellow 听故事 Play the story
-  button (停一停 Stop while playing) and two toggles, 拼音 Pinyin (on) and English (off) — kept for the
+  button (停一停 Stop while playing) and two toggles, 拼音 Pinyin and English, both off by default — kept for the
   visit. A white card: the title in Kai (+ title pinyin / English), then each sentence with its pinyin
   and English lines. The week's words are coloured (`--grid-ink`), underlined, and are buttons (≥ 48 px
   tall): tap = speak the word; their syllables are bold in the pinyin line. Play reads the story

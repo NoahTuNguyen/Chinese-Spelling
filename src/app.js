@@ -904,7 +904,7 @@
     if (v && typeof v === "object") { var o = {}; for (var k in v) o[k] = nfcDeep(v[k]); return o; }
     return v;
   }
-  var storyPy = true, storyEn = false; /* reading toggles, kept for this visit (English off by default) */
+  var storyPy = false, storyEn = false; /* reading toggles, both off by default, kept for this visit */
   /* The list's words in the order they first appear in its story. */
   function storyWords(L) {
     var st = STORIES[L.id]; if (!st) return [];
