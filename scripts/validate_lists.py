@@ -126,6 +126,52 @@ if look is not None:
                 if swapped != word and swapped in all_words:
                     errors.append(f"lookalikes.json {ch}: swapping {ch}→{a} in {word} gives {swapped}, another word in the lists")
 
+# ---- stories.json (小故事 Story time): { "<listId>": { title, titlePinyin, titleEn, sentences: [{ zh, py, en }] } } ----
+# Every word of the list must appear in its story (the Find-the-words game asks for each one). A list
+# with no story yet only warns; a word whose pinyin isn't in its sentence's pinyin also only warns.
+STORY_PATH = PATH.parent / "stories.json"
+stories = None
+if STORY_PATH.is_file():
+    try:
+        stories = json.loads(STORY_PATH.read_text(encoding="utf-8"))
+        if not isinstance(stories, dict):
+            raise ValueError("must be an object of list id → story")
+    except Exception as e:
+        errors.append(f"stories.json: {e}")
+        stories = None
+
+if stories is not None:
+    by_id = {l.get("id"): l for l in lists}
+    for sid, st in stories.items():
+        where = f"stories.json {sid}"
+        if sid not in by_id:
+            errors.append(f"{where}: no list with this id in lists.json")
+            continue
+        if not isinstance(st, dict):
+            errors.append(f"{where}: must be an object")
+            continue
+        for f in ("title", "titlePinyin", "titleEn"):
+            if not (isinstance(st.get(f), str) and st[f].strip()):
+                errors.append(f"{where}: missing {f}")
+        sents = st.get("sentences")
+        if not isinstance(sents, list) or not sents:
+            errors.append(f"{where}: needs a non-empty sentences list")
+            continue
+        for k, s in enumerate(sents):
+            if not isinstance(s, dict) or any(not (isinstance(s.get(f), str) and s[f].strip()) for f in ("zh", "py", "en")):
+                errors.append(f"{where} sentence {k + 1}: needs zh, py and en")
+        good = [s for s in sents if isinstance(s, dict) and isinstance(s.get("zh"), str)]
+        for w in by_id[sid].get("words") or []:
+            hz = w.get("hanzi", "")
+            holding = [s for s in good if hz and hz in s["zh"]]
+            if not holding:
+                errors.append(f"{where}: the list word {hz} doesn't appear in the story")
+            elif not any(has_pinyin(s.get("py", ""), w.get("pinyin", "")) for s in holding):
+                warnings.append(f"{where}: the pinyin '{w.get('pinyin')}' of {hz} isn't in its sentence's pinyin (it won't be highlighted there)")
+    for l in lists:
+        if l.get("id") not in stories:
+            warnings.append(f"stories.json: no story yet for {l.get('id')} (小故事 is hidden for that list)")
+
 # ---- stroke-order data (Hanzi Writer): one file per character, from scripts/fetch_strokes.py ----
 STROKES = PATH.parent.parent / "vendor" / "hanzi-writer-data"
 used = sorted({c for l in lists for w in (l.get("words") or []) for c in w.get("hanzi", "") if HAN.match(c)})
@@ -138,4 +184,4 @@ for m in warnings:
 if errors:
     print("\n".join(errors))
     sys.exit(1)
-print(f"OK: {len(lists)} lists, {sum(len(l['words']) for l in lists)} words, {sum(1 for l in lists for w in l['words'] if w.get('img'))} pictures, {sum(1 for l in lists for w in l['words'] if w.get('sentence'))} sentences, {len(look)} look-alike entries, {len(used)} characters with stroke data")
+print(f"OK: {len(lists)} lists, {sum(len(l['words']) for l in lists)} words, {sum(1 for l in lists for w in l['words'] if w.get('img'))} pictures, {sum(1 for l in lists for w in l['words'] if w.get('sentence'))} sentences, {len(stories or {})} stories, {len(look)} look-alike entries, {len(used)} characters with stroke data")

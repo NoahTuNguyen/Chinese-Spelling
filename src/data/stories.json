@@ -1,0 +1,66 @@
+{
+  "l14": {
+    "title": "去公园", "titlePinyin": "Qù gōng yuán", "titleEn": "To the park",
+    "sentences": [
+      { "zh": "星期六，小美和爸爸去公园。", "py": "Xīng qī liù, Xiǎo Měi hé bà ba qù gōng yuán.", "en": "On Saturday, Xiao Mei and Dad go to the park." },
+      { "zh": "公园里有树林，也有大草地。", "py": "Gōng yuán lǐ yǒu shù lín, yě yǒu dà cǎo dì.", "en": "The park has woods and a big lawn." },
+      { "zh": "小美坐在岩石上，看花园里的花。", "py": "Xiǎo Měi zuò zài yán shí shang, kàn huā yuán lǐ de huā.", "en": "Xiao Mei sits on a rock and looks at the flowers in the garden." },
+      { "zh": "这里的空气真好！", "py": "Zhè lǐ de kōng qì zhēn hǎo!", "en": "The air here is so fresh!" }
+    ]
+  },
+  "l15": {
+    "title": "美丽的天空", "titlePinyin": "Měi lì de tiān kōng", "titleEn": "The beautiful sky",
+    "sentences": [
+      { "zh": "早上下雨了，小美在家看书。", "py": "Zǎo shang xià yǔ le, Xiǎo Měi zài jiā kàn shū.", "en": "In the morning it rains, so Xiao Mei reads at home." },
+      { "zh": "雨停了，太阳出来了。", "py": "Yǔ tíng le, tài yáng chū lái le.", "en": "The rain stops and the sun comes out." },
+      { "zh": "天上有彩虹，真美！", "py": "Tiān shàng yǒu cǎi hóng, zhēn měi!", "en": "There's a rainbow in the sky, so pretty!" },
+      { "zh": "晚上，小美看到月亮和星星。", "py": "Wǎn shang, Xiǎo Měi kàn dào yuè liàng hé xīng xing.", "en": "At night, Xiao Mei sees the moon and the stars." }
+    ]
+  },
+  "l16": {
+    "title": "去郊外", "titlePinyin": "Qù jiāo wài", "titleEn": "A trip to the countryside",
+    "sentences": [
+      { "zh": "小美和妈妈去郊外玩。", "py": "Xiǎo Měi hé mā ma qù jiāo wài wán.", "en": "Xiao Mei and Mum go to the countryside to play." },
+      { "zh": "忽然，天上来了很多乌云。", "py": "Hū rán, tiān shàng lái le hěn duō wū yún.", "en": "Suddenly, lots of dark clouds fill the sky." },
+      { "zh": "刮风了，还有闪电！", "py": "Guā fēng le, hái yǒu shǎn diàn!", "en": "The wind blows, and there's lightning too!" },
+      { "zh": "妈妈打伞，她们快快回家。", "py": "Mā ma dǎ sǎn, tā men kuài kuài huí jiā.", "en": "Mum opens her umbrella and they hurry home." },
+      { "zh": "回到家，大家都很开心。", "py": "Huí dào jiā, dà jiā dōu hěn kāi xīn.", "en": "Back home, everyone is happy." }
+    ]
+  },
+  "l17": {
+    "title": "看日历", "titlePinyin": "Kàn rì lì", "titleEn": "Looking at the calendar",
+    "sentences": [
+      { "zh": "小美看日历，明天是星期六。", "py": "Xiǎo Měi kàn rì lì, míng tiān shì xīng qī liù.", "en": "Xiao Mei looks at the calendar; tomorrow is Saturday." },
+      { "zh": "新加坡天气炎热，今天也很晴朗。", "py": "Xīn jiā pō tiān qì yán rè, jīn tiān yě hěn qíng lǎng.", "en": "Singapore's weather is hot, and today is clear and sunny too." },
+      { "zh": "小美说：“我想去寒冷的地方看雪！”", "py": "Xiǎo Měi shuō: \"Wǒ xiǎng qù hán lěng de dì fang kàn xuě!\"", "en": "Xiao Mei says, \"I want to go somewhere cold to see snow!\"" },
+      { "zh": "爸爸说：“好，等有时间，我们就去。”", "py": "Bà ba shuō: \"Hǎo, děng yǒu shí jiān, wǒ men jiù qù.\"", "en": "Dad says, \"OK, when we have time, we'll go.\"" }
+    ]
+  },
+  "l18": {
+    "title": "小美的太空书", "titlePinyin": "Xiǎo Měi de tài kōng shū", "titleEn": "Xiao Mei's space book",
+    "sentences": [
+      { "zh": "小美在看太空书。", "py": "Xiǎo Měi zài kàn tài kōng shū.", "en": "Xiao Mei is reading a space book." },
+      { "zh": "我们住在地球上，月球离地球很近。", "py": "Wǒ men zhù zài dì qiú shang, yuè qiú lí dì qiú hěn jìn.", "en": "We live on Earth, and the Moon is close to Earth." },
+      { "zh": "海王星和天王星离我们很远。", "py": "Hǎi wáng xīng hé tiān wáng xīng lí wǒ men hěn yuǎn.", "en": "Neptune and Uranus are very far from us." },
+      { "zh": "彗星有长长的尾巴，真好看！", "py": "Huì xīng yǒu cháng cháng de wěi ba, zhēn hǎo kàn!", "en": "Comets have long tails, they look so nice!" }
+    ]
+  },
+  "l19": {
+    "title": "我们爱地球", "titlePinyin": "Wǒ men ài dì qiú", "titleEn": "We love the Earth",
+    "sentences": [
+      { "zh": "宇宙很大，地球是我们的家。", "py": "Yǔ zhòu hěn dà, dì qiú shì wǒ men de jiā.", "en": "The universe is very big, and Earth is our home." },
+      { "zh": "我们要爱护环境。", "py": "Wǒ men yào ài hù huán jìng.", "en": "We should take care of the environment." },
+      { "zh": "小美把垃圾放进垃圾桶，还会节约用水。", "py": "Xiǎo Měi bǎ lā jī fàng jìn lā jī tǒng, hái huì jié yuē yòng shuǐ.", "en": "Xiao Mei puts rubbish in the bin, and saves water too." },
+      { "zh": "老师说：“小美很环保！”", "py": "Lǎo shī shuō: \"Xiǎo Měi hěn huán bǎo!\"", "en": "The teacher says, \"Xiao Mei is very eco-friendly!\"" }
+    ]
+  },
+  "l20": {
+    "title": "中秋节的晚上", "titlePinyin": "Zhōng qiū jié de wǎn shang", "titleEn": "Mid-Autumn night",
+    "sentences": [
+      { "zh": "中秋节的晚上，小美用望远镜看夜空。", "py": "Zhōng qiū jié de wǎn shang, Xiǎo Měi yòng wàng yuǎn jìng kàn yè kōng.", "en": "On Mid-Autumn night, Xiao Mei looks at the night sky with a telescope." },
+      { "zh": "妈妈给她讲嫦娥的神话故事。", "py": "Mā ma gěi tā jiǎng Cháng'é de shén huà gù shi.", "en": "Mum tells her the myth of Chang'e." },
+      { "zh": "小美说：“我长大了要坐航天飞机去月亮上看看！”", "py": "Xiǎo Měi shuō: \"Wǒ zhǎng dà le yào zuò háng tiān fēi jī qù yuè liàng shang kàn kan!\"", "en": "Xiao Mei says, \"When I grow up, I want to ride a space shuttle to the moon!\"" },
+      { "zh": "爸爸笑着说：“也许你还会见到外星人呢！”", "py": "Bà ba xiào zhe shuō: \"Yě xǔ nǐ hái huì jiàn dào wài xīng rén ne!\"", "en": "Dad smiles and says, \"Maybe you'll even meet an alien!\"" }
+    ]
+  }
+}
