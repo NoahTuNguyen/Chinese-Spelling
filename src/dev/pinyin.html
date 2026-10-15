@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Pinyin test</title>
+<link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="pinyin.css">
+</head>
+<body>
+<main class="pv-main">
+  <h1>Pinyin test</h1>
+  <p class="pv-note">Developer page: every pinyin string in <code>lists.json</code> and <code>stories.json</code>,
+    in the UI font (Baloo 2) and in <code>--font-pinyin</code>, which the story view uses. First-tone letters
+    (ā ō ū ī) should have the mark centred over the letter in the right-hand column in every browser.
+    Strings that aren't NFC are flagged.</p>
+  <p class="pv-legend"><span>UI font (Baloo 2)</span><span>--font-pinyin</span></p>
+  <div id="pv"><p>Loading…</p></div>
+</main>
+<script src="pinyin.js"></script>
+</body>
+</html>

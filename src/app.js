@@ -37,7 +37,7 @@
   var D = newDict();
   /* Play tab: phase picker → run → end. q = questions { w, choices[], firstTry }, i = current question,
      wrong = choice indexes tried and wrong, solved = answered right, hint = pinyin shown, anim = one-off animation. */
-  function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null, ci: 0, strokes: 0, cm: 0, ch: false, busy: false, step: "", sa: null, lane: null, sv: "", reading: -1, playing: false }; }
+  function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null, ci: 0, strokes: 0, cm: 0, ch: false, busy: false, step: "", sa: null, lane: null, sv: "", reading: -1, playing: false, hl: 0, pyShow: false }; }
   var G = newGame(), gTimer = null;
   var TOKEN = 0;
   /* Set just before the first render: voice detection can finish while this script is still starting up
@@ -897,6 +897,13 @@
   /* ---------- 小故事 Story time: read along, then find the week's words in the story ---------- */
   /* data/stories.json: { "<listId>": { title, titlePinyin, titleEn, sentences: [{ zh, py, en }] } } */
   var STORIES = {};
+  /* Pinyin must be NFC (ā, not a + U+0304) so tone marks render in every font; the validator checks the file too. */
+  function nfcDeep(v) {
+    if (typeof v === "string") return v.normalize("NFC");
+    if (Array.isArray(v)) return v.map(nfcDeep);
+    if (v && typeof v === "object") { var o = {}; for (var k in v) o[k] = nfcDeep(v[k]); return o; }
+    return v;
+  }
   var storyPy = true, storyEn = false; /* reading toggles, kept for this visit (English off by default) */
   /* The list's words in the order they first appear in its story. */
   function storyWords(L) {
@@ -925,24 +932,28 @@
     if (!pys.length) return s;
     return s.replace(new RegExp("(^|[^\\p{L}\\p{M}])(" + pys.join("|") + ")(?![\\p{L}\\p{M}])", "giu"), function (m, pre, w) { return pre + '<b class="st-pyw">' + w + "</b>"; });
   }
+  /* Reading: week words coloured, underlined, tappable (tap = hear it); Pinyin (on) / English (off) switches.
+     Find the words: the story as plain text (no colour, underline, pinyin or numbers); a week word is a
+     plain-looking button, other text gives a gentle nudge. 💡 提示: 1st tap = pinyin of every sentence for
+     5 s; 2nd tap = that again + the week words underlined until answered. Any hint = no first-try star. */
   function storyView(g) {
     var L = listById(G.listId), st = L && STORIES[L.id]; if (!st) return "";
     var find = G.sv === "find", n = G.q.length, q = find ? G.q[G.i] : null, words = storyWords(L), a = G.sa || {}; G.sa = null;
-    var occ = 0;
+    var showPy = find ? !!G.pyShow : storyPy, occ = 0;
     var sents = st.sentences.map(function (s, k) {
       var zh = storySegments(s.zh, words).map(function (seg) {
-        if (seg.t) return esc(seg.t);
-        var w = seg.w, num = words.indexOf(w) + 1, right = find && G.solved && w === q.answer, wrong = find && G.wrong.indexOf(w) >= 0;
+        if (seg.t) return find ? '<span class="st-t">' + esc(seg.t) + "</span>" : esc(seg.t);
+        var w = seg.w, right = find && G.solved && w === q.answer, wrong = find && G.wrong.indexOf(w) >= 0;
         var cls = "st-w" + (right ? " right" : "") + (wrong ? " wrong" : "") + (a.w === w ? " " + a.type : "");
         occ++;
         return '<button type="button" class="' + cls + '" data-act="stw" data-w="' + esc(w) + '" data-hl="stw-' + occ + '"' + (wrong || (find && G.solved) ? " disabled" : "") +
-          ' aria-label="' + (find ? num + ". " : "") + esc(w) + (right ? ", right" : wrong ? ", not this one" : "") + '">' + (find ? '<span class="st-n" aria-hidden="true">' + num + "</span>" : "") + esc(w) + "</button>";
+          ' aria-label="' + esc(w) + (right ? ", right" : wrong ? ", not this one" : "") + '">' + esc(w) + "</button>";
       }).join("");
       return '<p class="st-s' + (G.reading === k ? " reading" : "") + '" data-k="' + k + '"><span class="st-zh" lang="zh-CN">' + zh + "</span>" +
-        (storyPy ? '<span class="st-py">' + storyPinyin(s.py, L, words) + "</span>" : "") + (storyEn && !find ? '<span class="st-en">' + esc(s.en) + "</span>" : "") + "</p>";
+        (showPy ? '<span class="st-py">' + (find ? esc(s.py) : storyPinyin(s.py, L, words)) + "</span>" : "") + (storyEn && !find ? '<span class="st-en">' + esc(s.en) + "</span>" : "") + "</p>";
     }).join("");
-    var card = '<article class="st-card" aria-label="' + esc(st.titleEn) + '"><h1 class="st-title" lang="zh-CN">' + esc(st.title) + "</h1>" +
-      (storyPy ? '<p class="st-tpy">' + esc(st.titlePinyin) + "</p>" : "") + (storyEn && !find ? '<p class="st-ten">' + esc(st.titleEn) + "</p>" : "") + sents + "</article>";
+    var card = '<article class="st-card' + (find && G.hl >= 2 && !G.solved ? " st-under" : "") + '" aria-label="' + esc(st.titleEn) + '"><h1 class="st-title" lang="zh-CN">' + esc(st.title) + "</h1>" +
+      (showPy ? '<p class="st-tpy">' + esc(st.titlePinyin) + "</p>" : "") + (storyEn && !find ? '<p class="st-ten">' + esc(st.titleEn) + "</p>" : "") + sents + "</article>";
     function tog(k, cn, en, on) { return '<button type="button" class="st-tog" data-act="sttog" data-k="' + k + '" aria-pressed="' + on + '">' + (cn ? '<span lang="zh-CN">' + cn + "</span> " : "") + en + "</button>"; }
     if (!find) {
       return '<div class="screen game g-story">' +
@@ -952,11 +963,40 @@
         tog("py", "拼音", "Pinyin", storyPy) + tog("en", "", "English", storyEn) + "</div>" + card +
         '<div class="st-foot"><button type="button" class="big-btn dark st-go" data-act="stfind"><span class="bb-cn" lang="zh-CN">找一找</span><span class="bb-en">Find the words</span>' + IC.arrowR + "</button></div></div>";
     }
+    var hintOff = G.solved || G.hl >= 2;
     return '<div class="screen game g-story st-findv">' + gameTop(n, G.i) + howto(g.findHow[0], g.findHow[1], "st-how") +
       '<div class="st-findbar"><button type="button" class="g-say" data-act="gsay" data-hl="gsay"><span class="listen-ic">' + IC.spkMid + '</span><span lang="zh-CN">再听一次</span> Hear again</button>' +
-      (G.solved ? '<button type="button" class="big-btn dark g-next" data-act="gnext"><span class="bb-cn" lang="zh-CN">' + (G.i < n - 1 ? "下一个" : "看结果") + '</span><span class="bb-en">' + (G.i < n - 1 ? "Next" : "Finish") + "</span>" + IC.arrowR + "</button>" : "") + "</div>" +
+      (G.solved ? '<button type="button" class="big-btn dark g-next" data-act="gnext"><span class="bb-cn" lang="zh-CN">' + (G.i < n - 1 ? "下一个" : "看结果") + '</span><span class="bb-en">' + (G.i < n - 1 ? "Next" : "Finish") + "</span>" + IC.arrowR + "</button>"
+        : '<button type="button" class="g-hint" data-act="sthint"' + (hintOff ? " disabled" : "") + ' aria-label="Hint' + (G.hl === 1 ? ": underline the words" : ": show the pinyin") + '"><span aria-hidden="true">💡</span><span lang="zh-CN">提示</span> Hint</button>') + "</div>" +
       '<p class="g-reveal st-reveal" role="status">' + (G.solved ? '<span class="g-r-py">' + esc(q.w.pinyin || "") + '</span><span class="g-r-en">' + esc(q.w.english || "") + "</span>" : "") + "</p>" +
       '<section class="st-find" aria-label="' + esc(g.region) + '">' + card + "</section></div>";
+  }
+  var storyHintT = 0;
+  function storyHint() {
+    if (G.phase !== "run" || G.sv !== "find" || G.solved || G.hl >= 2) return;
+    var q = G.q[G.i], i = G.i; G.hl = (G.hl || 0) + 1; q.firstTry = false; G.pyShow = true;
+    clearTimeout(storyHintT);
+    storyHintT = setTimeout(function () { if (G.phase === "run" && G.sv === "find" && G.i === i && G.pyShow) { G.pyShow = false; render(); } }, 5000);
+    render();
+    var h = root.querySelector(".g-hint:not([disabled])") || root.querySelector(".g-say"); if (h) h.focus({ preventScroll: true });
+  }
+  /* Tapped story text that isn't a week word: a gentle nudge of that sentence, no sound, no penalty.
+     Listens for pointerup, not click: iOS Safari sends no click for a tap on plain text. */
+  root.addEventListener("pointerup", function (e) {
+    var t = e.target; if (!t.closest || !t.closest(".st-findv .st-zh") || t.closest(".st-w")) return;
+    storyNudge(t);
+  });
+  function storyNudge(el) {
+    var p = el.closest(".st-s"); if (!p) return;
+    p.classList.remove("nudge"); void p.offsetWidth; p.classList.add("nudge");
+    clearTimeout(p._nudge); p._nudge = setTimeout(function () { p.classList.remove("nudge"); }, 450);
+  }
+  /* ←/→ (and ↑/↓) move between the week words in story order; Enter or Space selects (native button). */
+  function storyArrow(d) {
+    var ws = Array.prototype.slice.call(root.querySelectorAll(".st-w:not([disabled])")); if (!ws.length) return;
+    var i = ws.indexOf(document.activeElement);
+    var to = i < 0 ? (d > 0 ? 0 : ws.length - 1) : Math.max(0, Math.min(ws.length - 1, i + d));
+    ws[to].focus();
   }
   /* Read the story sentence by sentence, highlighting the sentence being read (not word by word: iOS
      speech boundary events are unreliable for Chinese). */
@@ -993,7 +1033,7 @@
     }
   }
   function storyFind() {
-    stopSpeech(); G.playing = false; G.reading = -1; G.sv = "find"; G.i = 0; G.solved = false; G.wrong = [];
+    stopSpeech(); G.playing = false; G.reading = -1; G.sv = "find"; G.i = 0; G.solved = false; G.wrong = []; G.hl = 0; G.pyShow = false;
     render(); toTop();
     var s = root.querySelector(".g-say"); if (s) s.focus({ preventScroll: true });
     curGame().onShow(G.q[0]);
@@ -1267,7 +1307,7 @@
     clearTimeout(gTimer); if (G.phase !== "run" || !G.solved) return;
     stopSpeech();
     if (G.i < G.q.length - 1) {
-      G.i++; G.wrong = []; G.solved = false; G.hint = false; G.step = ""; G.sa = null; render();
+      G.i++; G.wrong = []; G.solved = false; G.hint = false; G.step = ""; G.sa = null; G.hl = 0; G.pyShow = false; render();
       var p = root.querySelector(".g-choice, .sp-box, .st-findv .g-say"); if (p) p.focus({ preventScroll: true });
       var g = curGame(); if (g.onShow) g.onShow(G.q[G.i]);
     } else gameFinish();
@@ -1773,6 +1813,7 @@
     sttog: function (b) { if (b.dataset.k === "en") storyEn = !storyEn; else storyPy = !storyPy; render(); },
     stfind: storyFind,
     stw: storyWord,
+    sthint: storyHint,
     bgo: function () { audioCtx(); startGame(G.game); },
     bpick: function (b) { bubblePick(+b.dataset.i); },
     gpick: function (b) { gamePick(+b.dataset.i); },
@@ -1903,6 +1944,7 @@
     /* 小故事: Space plays the story (reading) or hears the word again (finding); 1…n tap the nth week word. */
     if (S.mode === "play" && G.phase === "run" && G.game === "story") {
       if (space && !onBtn) { e.preventDefault(); if (G.sv === "find") ACT.gsay(); else storyPlay(); }
+      else if (k === "ArrowLeft" || k === "ArrowUp" || k === "ArrowRight" || k === "ArrowDown") { e.preventDefault(); storyArrow(k === "ArrowLeft" || k === "ArrowUp" ? -1 : 1); }
       else if (G.sv === "find" && /^[1-9]$/.test(k)) { var sw = storyWords(listById(G.listId))[+k - 1], sb = sw && root.querySelector('.st-w[data-w="' + sw + '"]:not([disabled])'); e.preventDefault(); if (sb && !e.repeat) storyWord(sb); }
       return;
     }
@@ -1977,7 +2019,7 @@
   fetch("data/lookalikes.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; })
     .then(function (d) { LOOK = d && typeof d === "object" ? d : {}; }).catch(function () {}); /* only 缺字 uses it; it falls back without */
   fetch("data/stories.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; })
-    .then(function (d) { STORIES = d && typeof d === "object" ? d : {}; if (S.mode === "play" && G.phase === "picker") render(); }).catch(function () {}); /* 小故事 only shows for lists with a story */
+    .then(function (d) { STORIES = d && typeof d === "object" ? nfcDeep(d) : {}; if (S.mode === "play" && G.phase === "picker") render(); }).catch(function () {}); /* 小故事 only shows for lists with a story */
   fetch("data/lists.json", { cache: "no-cache" })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (d) { S.lists = TXL.sortLists((d && d.lists) || []); S.cur = pickDefault(); S.loading = false; render(); })

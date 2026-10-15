@@ -11,6 +11,9 @@
   --again-ring:#F2A64B;--face-off:#6E7F8A;--star-off:#DCE8E1;--star-off-line:#B9CCC1;--hw-outline:#D9E2DD;
   --kai:"Kaiti SC","STKaiti","KaiTi","楷体","Noto Serif SC","Songti SC",serif;
   --ui:"Baloo 2",system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+  /* Pinyin lines: a system font with real precomposed tone-marked letters (ā ō ū ī). Chrome on Windows
+     draws Baloo 2's first-tone letters (from its Latin-extended subset file) with the macron misplaced. */
+  --font-pinyin:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --tabbar:86px;
   /* Bottom breathing room for full-screen views. On phones it keeps buttons out of the strip that
      iOS Safari's collapsed toolbar draws over at the bottom of a scrolled page. */
@@ -1015,12 +1018,12 @@ button.sp-box:focus-visible{z-index:3;outline-offset:-3px}
 .st-tog[aria-pressed="true"]{border-color:var(--grid);background:var(--row-on);box-shadow:0 0 0 2px var(--grid)}
 .st-card{padding:20px 16px 18px;border-radius:24px;background:var(--card);box-shadow:0 6px 0 var(--lift)}
 .st-title{margin:0;text-align:center;font-family:var(--kai);font-size:34px;font-weight:500;line-height:1.3;color:var(--ink)}
-.st-tpy{margin:2px 0 0;text-align:center;font-size:16px;font-weight:700;color:var(--muted)}
+.st-tpy{margin:2px 0 0;font-family:var(--font-pinyin);text-align:center;font-size:16px;font-weight:700;color:var(--muted)}
 .st-ten{margin:0;text-align:center;font-size:15px;font-weight:600;color:var(--muted)}
 .st-s{margin:12px 0 0;padding:6px 10px 8px;border-radius:16px;border-left:5px solid transparent;display:flex;flex-direction:column;transition:background .2s ease}
 .st-s.reading{background:var(--tip);border-left-color:var(--pencil)}
 .st-zh{font-family:var(--kai);font-size:26px;line-height:2.1;color:var(--ink)}
-.st-py{font-size:16px;font-weight:600;line-height:1.5;color:var(--muted)}
+.st-py{font-family:var(--font-pinyin);font-size:16px;font-weight:600;line-height:1.5;color:var(--muted)}
 .st-pyw{color:var(--grid-ink);font-weight:800}
 .st-en{margin-top:2px;font-size:15px;font-weight:600;line-height:1.4;color:var(--muted)}
 /* The week's words: coloured, underlined buttons inside the text */
@@ -1034,16 +1037,22 @@ button.sp-box:focus-visible{z-index:3;outline-offset:-3px}
 .st-w.wrong{opacity:.4;text-decoration-style:dotted}
 .st-w.bounce{animation:g-bounce .45s cubic-bezier(.3,1.6,.5,1)}
 .st-w.wobble{animation:g-wobble .4s ease}
-.st-n{display:none}
-@media (hover:hover) and (pointer:fine){
-  .st-n{display:inline-grid;place-items:center;width:18px;height:18px;margin-right:3px;border-radius:5px;border:1.5px solid var(--track-off);font-family:var(--ui);font-size:11px;font-weight:800;line-height:1;color:var(--muted);vertical-align:super}
-  .st-w.right .st-n{border-color:rgba(255,255,255,.6);color:#FFFFFF}
-}
 .st-foot{display:flex;justify-content:center;padding-top:18px}
 .st-go{max-width:380px}
 .st-findbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;margin:2px 0 4px}
 .st-findbar .g-next{width:auto;min-height:56px}
 .st-reveal{margin:0 0 8px;min-height:32px}
+.g-story .g-r-py{font-family:var(--font-pinyin)}
+/* Find the words: the story as plain text. Week words look like the rest (no colour, underline or hover
+   tint) until the 2nd hint underlines them; tapping other text nudges the sentence. */
+.st-findv .st-zh{cursor:pointer}
+.st-findv .st-w{margin:0;padding:0 1px;border-radius:6px;color:inherit;text-decoration:none}
+@media (hover:hover){.st-findv .st-w:hover:not(:disabled){background:transparent}}
+.st-findv .st-w.right{padding:0 4px}
+.st-findv .st-under .st-w:not(.right){text-decoration:underline;text-decoration-color:var(--grid);text-decoration-thickness:3px;text-underline-offset:7px}
+.st-findv .st-findbar .g-hint{min-height:52px}
+.st-s.nudge{animation:st-nudge .4s ease}
+@keyframes st-nudge{25%{translate:-3px 0}50%{translate:3px 0}75%{translate:-2px 0}}
 @media (min-width:768px){
   .st-card{padding:26px 28px 24px}
   .st-title{font-size:40px}
@@ -1072,7 +1081,7 @@ button.sp-box:focus-visible{z-index:3;outline-offset:-3px}
   .tzg.wobble,.sp-none.bounce,.sp-none.wobble,.pen path{animation:none !important}
   .ct-item.caught,.ct-basket.bump,.ct-basket.shake{animation:none !important}
   .ct-basket{transition:none !important}
-  .st-w.bounce,.st-w.wobble{animation:none !important}
+  .st-w.bounce,.st-w.wobble,.st-s.nudge{animation:none !important}
   .st-s{transition:none !important}
   .sp-none:active{transform:none !important}
   /* Bubbles: still row with a gentle fade (opacity only), no pop/burst/wobble movement */

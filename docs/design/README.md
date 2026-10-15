@@ -269,7 +269,9 @@ fade + disable, try again; never red, never "wrong"), Web Audio sounds behind th
 (stars, positive headline, 再玩一次 Play again, 回到游戏 Back to games). First-try misses go to
 Tricky (except Memory match). Best score per game per list in `tx-games`, shown on the game card.
 One bilingual how-to line on every game screen. Choice buttons ≥ 72 px; keys 1/2/3(/4) answer;
-everything works by keyboard.
+everything works by keyboard. The ①②… number-key badges only show on devices with a fine pointer that
+can hover (`@media (hover: hover) and (pointer: fine)`: a mouse, so likely a keyboard too); never on
+touch screens.
 
 **10 听音选字 Listen & pick.** Every word in the list once, random order. The word is spoken when
 the question appears; a big 🔊 再听一次 Hear again button replays it. 3 choices, characters only.
@@ -364,8 +366,18 @@ basket to catch the word you hear.
 story per list (3–5 Primary 1–2 sentences, simple, positive, Singapore-friendly everyday settings)
 that uses every word of that list at least once; Chinese quotes are “ ” in `zh`, straight quotes in `py`
 and `en`. The card only shows for a list that has a story ("No story for this week yet" otherwise).
-Validator: every list word appears in its story's sentences; a missing story or a word whose pinyin
-isn't in its sentence's pinyin only warns.
+Validator: every list word appears in its story's sentences, and every string is NFC with no
+combining marks (U+0300–U+036F — tone marks must be precomposed letters like ā); a missing story or a
+word whose pinyin isn't in its sentence's pinyin only warns. The app also normalises the file to NFC
+when it loads.
+- **Pinyin font.** All story pinyin (title, sentences, the hint, the answer's pinyin) uses the
+  `--font-pinyin` token: a system UI stack (`system-ui`, `-apple-system`, Segoe UI, Roboto, …) whose
+  fonts have real precomposed tone-marked letters. Chrome on Windows draws Baloo 2's first-tone letters
+  (ā ō ū ī, from its Latin-extended subset file) with the macron beside the letter ("tiañ koñg");
+  Safari draws them correctly, but the token is used everywhere so every browser matches.
+  `src/dev/pinyin.html` (a developer page, not linked from the app) shows every pinyin string from
+  `lists.json` and `stories.json` in Baloo 2 and in `--font-pinyin` side by side, plus a tone-mark
+  sampler at each weight, and flags strings that aren't NFC — open it in Chrome and Safari to check.
 - **Reading** (how-to 听故事，读一读 · Listen and read along): ✕, 小故事, a yellow 听故事 Play the story
   button (停一停 Stop while playing) and two toggles, 拼音 Pinyin (on) and English (off) — kept for the
   visit. A white card: the title in Kai (+ title pinyin / English), then each sentence with its pinyin
@@ -373,13 +385,22 @@ isn't in its sentence's pinyin only warns.
   tall): tap = speak the word; their syllables are bold in the pinyin line. Play reads the story
   sentence by sentence and highlights the sentence being read (pale yellow, pencil-yellow left edge;
   scrolled into view) — sentence-level, not word-level, because iOS speech boundary events are
-  unreliable for Chinese. Space plays/stops. At the end, 找一找 Find the words →.
+  unreliable for Chinese. Space plays/stops; Tab or ←/→ move through the week words, Enter speaks the
+  focused one. At the end, 找一找 Find the words →.
 - **Find the words** (how-to 听一听，找一找 · Tap the word you hear): same top bar and dots as the other
-  games. Every week word once, random order; the word is spoken (🔊 再听一次 / Space replays it) and she
-  taps it in the story (any place it appears). Right: the word turns `--good` blue, bounce, chime, the
-  word is spoken, pinyin + English show, next after ~1.8 s (or 下一个 Next beside Hear again). Wrong:
-  boop, wobble, that word fades (dotted underline) for this question. English is hidden here. Keys 1…n
-  tap the nth week word in story order (small number badges on devices with a mouse).
+  games. Every week word once, random order; the word is spoken (🔊 再听一次 / Space replays it). The
+  story is shown as **plain text**: no pinyin, no English, and the week words are not coloured,
+  underlined or numbered (no hover tint either). Tapping any character of a week word selects that
+  word (each occurrence is a plain-looking button); tapping other text gives the sentence a gentle
+  nudge — no sound, no penalty (it listens for `pointerup`, because iOS Safari sends no `click` for a
+  tap on plain text). Right: the word turns `--good` blue, bounce, chime, the word is spoken, pinyin +
+  English show, next after ~1.8 s (or 下一个 Next beside Hear again). Wrong week word: boop, wobble,
+  that word fades for this question, no first-try star.
+  - **💡 提示 Hint** (beside Hear again): 1st tap shows the pinyin of every sentence (and the title) for
+    5 s, plain (no bold words); 2nd tap shows it again and underlines the week words until the word is
+    found; then the button is disabled. Any hint = no first-try star for that word (it goes to Tricky).
+  - Keyboard: Tab or ←/→ (↑/↓) move through the week words in story order, Enter or Space selects;
+    keys 1…n still pick the nth week word. No number badges in the story.
 - End screen as usual: stars = words found first try, misses go to Tricky, best per list in `tx-games`.
 
 **Stroke order (Hanzi Writer), self-hosted.** Hanzi Writer 3.7.3 (MIT) lives in

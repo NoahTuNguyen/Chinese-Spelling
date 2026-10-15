@@ -140,7 +140,26 @@ if STORY_PATH.is_file():
         errors.append(f"stories.json: {e}")
         stories = None
 
+COMBINING = re.compile(r"[̀-ͯ]")
+
+
+def strings(v, where):
+    """Every string in a JSON value, with a readable path."""
+    if isinstance(v, str):
+        yield where, v
+    elif isinstance(v, list):
+        for i, x in enumerate(v):
+            yield from strings(x, f"{where}[{i}]")
+    elif isinstance(v, dict):
+        for k, x in v.items():
+            yield from strings(x, f"{where}.{k}")
+
+
 if stories is not None:
+    # Tone marks must be precomposed (ā, not a + U+0304), or some fonts draw the mark in the wrong place.
+    for where, s in strings(stories, "stories.json"):
+        if unicodedata.normalize("NFC", s) != s or COMBINING.search(s):
+            errors.append(f"{where}: not NFC / has combining marks (U+0300–U+036F) — use precomposed letters like ā: {s!r}")
     by_id = {l.get("id"): l for l in lists}
     for sid, st in stories.items():
         where = f"stories.json {sid}"

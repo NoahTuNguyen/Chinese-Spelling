@@ -26,7 +26,10 @@ open a shared link, tap a word to hear it in Mandarin, and run a mock dictation.
 - `src/data/lists.json` — ALL spelling-list data
 - `src/data/lookalikes.json` — character → 2–4 look-alike characters (first = most common mix-up), for 缺字 and 找错字
 - `src/data/stories.json` — one short story per list id (`title`, `titlePinyin`, `titleEn`, `sentences`
-  of `{ zh, py, en }`) using every word of that list, for 小故事 Story time
+  of `{ zh, py, en }`) using every word of that list, for 小故事 Story time. All strings NFC (precomposed
+  tone marks, no U+0300–U+036F combining marks); the validator checks it
+- `src/dev/pinyin.html` (+ `.js`, `.css`) — developer page, not linked from the app: every pinyin string
+  from lists.json and stories.json in Baloo 2 vs `--font-pinyin`, with a tone-mark sampler; flags non-NFC
 - `src/img/` — one 640×480 WebP illustration per word, named by toneless pinyin (`caihong.webp`)
 - `src/img/brand/` — brand artwork (see Brand): `banner-phone.webp` (1036×676), `banner-wide.webp`
   (1024×338) for the welcome screen, `og-image.jpg` (1200×630) for link previews
@@ -183,6 +186,8 @@ When the user gives photos of a 听写 sheet:
 ## Design
 Kid-first screens for a 6–8 year old, with parent controls tucked into the Parent corner.
 - Fonts: UI **Baloo 2** (Google Fonts); characters and list titles in a Kai (楷体) stack, like the school sheet.
+  `--font-pinyin` (system UI stack) for pinyin lines that must render tone marks right: Chrome on
+  Windows misplaces the macron on Baloo 2's ā ō ū ī. Story time uses it; check with `src/dev/pinyin.html`.
 - Tokens on `:root`: mint paper `--paper`, green grid `--grid`, pencil yellow `--pencil`
   (+ `--pencil-shadow` under yellow buttons) for primary actions, blue `--good` for "got it",
   orange `--again` for "practise again". **No red for mistakes.** Card tints `--t0`…`--t4` cycle per word.
@@ -287,10 +292,14 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
     the basket: right → chime + spoken + next round; wrong → boop, it falls again, round not first try.
     Anything that falls past drops again. Reduced motion: 3 still words in the lanes, tap = catch.
   - 小故事 Story time (`kind: "story"`, `storyView`, `STORIES` from `data/stories.json`, loaded after
-    the first render): `G.sv` "read" → the story with the week's words as tappable buttons
-    (`storySegments`, longest word first), 听故事 reads it sentence by sentence (`storyPlay`, the
-    sentence being read gets `.reading`), Pinyin/English toggles (`storyPy`/`storyEn`); 找一找 → "find":
-    each week word once, tap it in the story (`storyWord`). Only lists with a story show the card.
+    the first render and normalised to NFC by `nfcDeep`): `G.sv` "read" → the story with the week's
+    words coloured, underlined, tappable (`storySegments`, longest word first), 听故事 reads it sentence
+    by sentence (`storyPlay`, `.reading`), Pinyin (on) / English (off) toggles (`storyPy`/`storyEn`);
+    找一找 → "find": plain text (no pinyin, colour, underline or numbers), each week word once, tap it
+    (`storyWord`); other text → `storyNudge` via `pointerup` (iOS sends no click on plain text), no
+    penalty. 💡 `storyHint`: `G.hl` 1 = all pinyin for 5 s (`G.pyShow`), 2 = again + `.st-under`; any
+    hint = not first try. ←/→ `storyArrow` move between week words. Only lists with a story show it.
+    All story pinyin uses `--font-pinyin`.
   - 写一写 Write it (`kind: "write"`): each word once; spoken on show, 🔊 Hear again (Space).
     Small 田字格 row (current box yellow) + drawing box with NO outline. `G.ci` = character,
     `G.strokes` = strokes done, `G.cm` = misses, `G.ch` = needed help. 3 misses on a stroke →

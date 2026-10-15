@@ -1,0 +1,20 @@
+/* Pinyin test page (developer tool) */
+.pv-main{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
+.pv-main h1{margin:0 0 6px;font-size:28px}
+.pv-note{margin:0 0 14px;color:var(--muted);font-size:15px}
+.pv-legend,.pv-row{display:grid;grid-template-columns:150px 1fr 1fr;gap:4px 16px;align-items:baseline}
+.pv-legend{position:sticky;top:0;z-index:1;padding:8px 0;background:var(--paper);font-weight:800}
+.pv-legend span:first-child{grid-column:2}
+.pv-sec{margin-top:18px;padding:12px 14px;border-radius:16px;background:var(--card)}
+.pv-sec h2{margin:0 0 6px;font-size:17px}
+.pv-row{padding:6px 0;border-top:1px solid var(--row-line)}
+.pv-src{font-size:13px;color:var(--muted)}
+.pv-ui{font-family:var(--ui);font-size:18px}
+.pv-py{font-family:var(--font-pinyin);font-size:18px}
+.w500{font-weight:500}.w600{font-weight:600}.w700{font-weight:700}.w800{font-weight:800}
+.pv-row.bad .pv-src{color:var(--danger-text);font-weight:800}
+@media (max-width:640px){
+  .pv-legend,.pv-row{grid-template-columns:1fr 1fr}
+  .pv-src{grid-column:1 / -1}
+  .pv-legend span:first-child{grid-column:1}
+}
