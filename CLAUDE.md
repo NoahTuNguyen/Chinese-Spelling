@@ -25,6 +25,8 @@ open a shared link, tap a word to hear it in Mandarin, and run a mock dictation.
 - `src/styles.css` — design tokens on `:root` (light; dark under `[data-theme="dark"]`), 田字格 boxes, components
 - `src/data/lists.json` — ALL spelling-list data
 - `src/data/lookalikes.json` — character → 2–4 look-alike characters (first = most common mix-up), for 缺字 and 找错字
+- `src/data/stories.json` — one short story per list id (`title`, `titlePinyin`, `titleEn`, `sentences`
+  of `{ zh, py, en }`) using every word of that list, for 小故事 Story time
 - `src/img/` — one 640×480 WebP illustration per word, named by toneless pinyin (`caihong.webp`)
 - `src/img/brand/` — brand artwork (see Brand): `banner-phone.webp` (1036×676), `banner-wide.webp`
   (1024×338) for the welcome screen, `og-image.jpg` (1200×630) for link previews
@@ -161,6 +163,11 @@ When the user gives photos of a 听写 sheet:
    Show the new entries in a table for review before committing.
    Run `python3 scripts/fetch_strokes.py` to download stroke data for the new characters
    (it only fetches what's missing) and commit the new `src/vendor/hanzi-writer-data/*.json`.
+   Also draft the list's story for `src/data/stories.json` (小故事 Story time): a title (+ pinyin and
+   English) and 3–5 short Primary 1–2 sentences, simple and positive, everyday Singapore-friendly
+   settings, using EVERY word of the list at least once; each sentence with `zh`, `py` (syllables
+   separated by spaces, Western punctuation) and `en`. Show the story (Chinese, pinyin, English) to the
+   user for review BEFORE committing it. The validator checks every word appears.
 6. Write one Gemini image line per word for the user to generate
    (`Image: <scene description>. One picture only, no text.`), naming the file each one
    becomes (`src/img/<toneless-pinyin>.webp`) and avoiding look-alikes within the list.
@@ -279,6 +286,11 @@ Kid-first screens for a 6–8 year old, with parent controls tucked into the Par
     (`CTDRAG`, `touch-action: none` on `.ct-field` only), ←/→ or 1–3. Caught in the catch window above
     the basket: right → chime + spoken + next round; wrong → boop, it falls again, round not first try.
     Anything that falls past drops again. Reduced motion: 3 still words in the lanes, tap = catch.
+  - 小故事 Story time (`kind: "story"`, `storyView`, `STORIES` from `data/stories.json`, loaded after
+    the first render): `G.sv` "read" → the story with the week's words as tappable buttons
+    (`storySegments`, longest word first), 听故事 reads it sentence by sentence (`storyPlay`, the
+    sentence being read gets `.reading`), Pinyin/English toggles (`storyPy`/`storyEn`); 找一找 → "find":
+    each week word once, tap it in the story (`storyWord`). Only lists with a story show the card.
   - 写一写 Write it (`kind: "write"`): each word once; spoken on show, 🔊 Hear again (Space).
     Small 田字格 row (current box yellow) + drawing box with NO outline. `G.ci` = character,
     `G.strokes` = strokes done, `G.cm` = misses, `G.ch` = needed help. 3 misses on a stroke →

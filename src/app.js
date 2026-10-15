@@ -37,7 +37,7 @@
   var D = newDict();
   /* Play tab: phase picker → run → end. q = questions { w, choices[], firstTry }, i = current question,
      wrong = choice indexes tried and wrong, solved = answered right, hint = pinyin shown, anim = one-off animation. */
-  function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null, ci: 0, strokes: 0, cm: 0, ch: false, busy: false, step: "", sa: null, lane: null }; }
+  function newGame() { return { phase: "picker", game: null, listId: null, q: [], i: 0, wrong: [], solved: false, hint: false, anim: null, result: null, ci: 0, strokes: 0, cm: 0, ch: false, busy: false, step: "", sa: null, lane: null, sv: "", reading: -1, playing: false }; }
   var G = newGame(), gTimer = null;
   var TOKEN = 0;
   /* Set just before the first render: voice detection can finish while this script is still starting up
@@ -593,7 +593,15 @@
         }
         return rounds;
       },
-      onShow: function (q) { sayWordSoon(q.w, 300); } }
+      onShow: function (q) { sayWordSoon(q.w, 300); } },
+    { id: "story", cn: "小故事", en: "Story time", sub: "Listen to a story, then find the words", kind: "story",
+      how: ["听故事，读一读", "Listen and read along"], findHow: ["听一听，找一找", "Tap the word you hear"], region: "The story",
+      items: function (L) { return L && STORIES[L.id] ? storyWords(L).map(function (h) { return L.words.filter(function (w) { return w.hanzi === h; })[0]; }) : []; }, min: 1,
+      notEnough: "No story for this week yet", ready: function (n) { return "A story with " + n + " words to find"; },
+      art: function () { return '<span class="gc-story"><span class="gc-book"><span lang="zh-CN">故</span><span lang="zh-CN">事</span></span></span>'; },
+      /* Find the words: every week word once, random order. */
+      build: function (L) { return shuffle(this.items(L)).map(function (w) { return { w: w, answer: w.hanzi, firstTry: true }; }); },
+      onShow: function (q) { sayWordSoon(q.w, 400); } }
   ];
   /* 缺字 look-alikes (data/lookalikes.json): character → [most common mix-up, others…]. */
   var LOOK = {};
@@ -886,6 +894,110 @@
     catchLane(Math.floor((e.clientX - f.getBoundingClientRect().left) / (f.clientWidth / 3)));
   });
   ["pointerup", "pointercancel"].forEach(function (ev) { root.addEventListener(ev, function (e) { if (CTDRAG === e.pointerId) CTDRAG = null; }); });
+  /* ---------- 小故事 Story time: read along, then find the week's words in the story ---------- */
+  /* data/stories.json: { "<listId>": { title, titlePinyin, titleEn, sentences: [{ zh, py, en }] } } */
+  var STORIES = {};
+  var storyPy = true, storyEn = false; /* reading toggles, kept for this visit (English off by default) */
+  /* The list's words in the order they first appear in its story. */
+  function storyWords(L) {
+    var st = STORIES[L.id]; if (!st) return [];
+    var text = st.sentences.map(function (s) { return s.zh; }).join(""), seen = [];
+    L.words.map(function (w) { return { h: w.hanzi, at: text.indexOf(w.hanzi) }; }).filter(function (o) { return o.at >= 0; })
+      .sort(function (a, b) { return a.at - b.at; }).forEach(function (o) { if (seen.indexOf(o.h) < 0) seen.push(o.h); });
+    return seen;
+  }
+  /* A sentence as text + tappable week words (longest word first, so 天王星 wins over 王星-like overlaps). */
+  function storySegments(zh, words) {
+    var byLen = words.slice().sort(function (a, b) { return b.length - a.length; }), out = [], buf = "", i = 0;
+    while (i < zh.length) {
+      var hit = null; for (var k = 0; k < byLen.length; k++) if (zh.substr(i, byLen[k].length) === byLen[k]) { hit = byLen[k]; break; }
+      if (hit) { if (buf) out.push({ t: buf }); buf = ""; out.push({ w: hit }); i += hit.length; }
+      else { buf += zh.charAt(i); i++; }
+    }
+    if (buf) out.push({ t: buf });
+    return out;
+  }
+  /* The pinyin line with the week words' syllables in bold blue (whole syllables, case ignored). */
+  function storyPinyin(py, L, words) {
+    var pys = L.words.filter(function (w) { return words.indexOf(w.hanzi) >= 0; }).map(function (w) { return (w.pinyin || "").normalize("NFC").trim().split(/\s+/).join(" "); })
+      .filter(Boolean).sort(function (a, b) { return b.length - a.length; }).map(function (p) { return p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); });
+    var s = esc((py || "").normalize("NFC"));
+    if (!pys.length) return s;
+    return s.replace(new RegExp("(^|[^\\p{L}\\p{M}])(" + pys.join("|") + ")(?![\\p{L}\\p{M}])", "giu"), function (m, pre, w) { return pre + '<b class="st-pyw">' + w + "</b>"; });
+  }
+  function storyView(g) {
+    var L = listById(G.listId), st = L && STORIES[L.id]; if (!st) return "";
+    var find = G.sv === "find", n = G.q.length, q = find ? G.q[G.i] : null, words = storyWords(L), a = G.sa || {}; G.sa = null;
+    var occ = 0;
+    var sents = st.sentences.map(function (s, k) {
+      var zh = storySegments(s.zh, words).map(function (seg) {
+        if (seg.t) return esc(seg.t);
+        var w = seg.w, num = words.indexOf(w) + 1, right = find && G.solved && w === q.answer, wrong = find && G.wrong.indexOf(w) >= 0;
+        var cls = "st-w" + (right ? " right" : "") + (wrong ? " wrong" : "") + (a.w === w ? " " + a.type : "");
+        occ++;
+        return '<button type="button" class="' + cls + '" data-act="stw" data-w="' + esc(w) + '" data-hl="stw-' + occ + '"' + (wrong || (find && G.solved) ? " disabled" : "") +
+          ' aria-label="' + (find ? num + ". " : "") + esc(w) + (right ? ", right" : wrong ? ", not this one" : "") + '">' + (find ? '<span class="st-n" aria-hidden="true">' + num + "</span>" : "") + esc(w) + "</button>";
+      }).join("");
+      return '<p class="st-s' + (G.reading === k ? " reading" : "") + '" data-k="' + k + '"><span class="st-zh" lang="zh-CN">' + zh + "</span>" +
+        (storyPy ? '<span class="st-py">' + storyPinyin(s.py, L, words) + "</span>" : "") + (storyEn && !find ? '<span class="st-en">' + esc(s.en) + "</span>" : "") + "</p>";
+    }).join("");
+    var card = '<article class="st-card" aria-label="' + esc(st.titleEn) + '"><h1 class="st-title" lang="zh-CN">' + esc(st.title) + "</h1>" +
+      (storyPy ? '<p class="st-tpy">' + esc(st.titlePinyin) + "</p>" : "") + (storyEn && !find ? '<p class="st-ten">' + esc(st.titleEn) + "</p>" : "") + sents + "</article>";
+    function tog(k, cn, en, on) { return '<button type="button" class="st-tog" data-act="sttog" data-k="' + k + '" aria-pressed="' + on + '">' + (cn ? '<span lang="zh-CN">' + cn + "</span> " : "") + en + "</button>"; }
+    if (!find) {
+      return '<div class="screen game g-story">' +
+        '<div class="d-top"><button type="button" class="round-btn" data-act="gquit" aria-label="Back to games">' + IC.close + '</button><span class="d-title" lang="zh-CN">小故事</span><span class="d-count"></span></div>' +
+        howto(g.how[0], g.how[1], "st-how") +
+        '<div class="st-bar"><button type="button" class="big-btn yellow st-play" data-act="stplay">' + (G.playing ? IC.stop + '<span class="bb-cn" lang="zh-CN">停一停</span><span class="bb-en">Stop</span>' : IC.play + '<span class="bb-cn" lang="zh-CN">听故事</span><span class="bb-en">Play the story</span>') + "</button>" +
+        tog("py", "拼音", "Pinyin", storyPy) + tog("en", "", "English", storyEn) + "</div>" + card +
+        '<div class="st-foot"><button type="button" class="big-btn dark st-go" data-act="stfind"><span class="bb-cn" lang="zh-CN">找一找</span><span class="bb-en">Find the words</span>' + IC.arrowR + "</button></div></div>";
+    }
+    return '<div class="screen game g-story st-findv">' + gameTop(n, G.i) + howto(g.findHow[0], g.findHow[1], "st-how") +
+      '<div class="st-findbar"><button type="button" class="g-say" data-act="gsay" data-hl="gsay"><span class="listen-ic">' + IC.spkMid + '</span><span lang="zh-CN">再听一次</span> Hear again</button>' +
+      (G.solved ? '<button type="button" class="big-btn dark g-next" data-act="gnext"><span class="bb-cn" lang="zh-CN">' + (G.i < n - 1 ? "下一个" : "看结果") + '</span><span class="bb-en">' + (G.i < n - 1 ? "Next" : "Finish") + "</span>" + IC.arrowR + "</button>" : "") + "</div>" +
+      '<p class="g-reveal st-reveal" role="status">' + (G.solved ? '<span class="g-r-py">' + esc(q.w.pinyin || "") + '</span><span class="g-r-en">' + esc(q.w.english || "") + "</span>" : "") + "</p>" +
+      '<section class="st-find" aria-label="' + esc(g.region) + '">' + card + "</section></div>";
+  }
+  /* Read the story sentence by sentence, highlighting the sentence being read (not word by word: iOS
+     speech boundary events are unreliable for Chinese). */
+  function storyPlay() {
+    if (G.playing) { stopSpeech(); G.playing = false; G.reading = -1; render(); return; }
+    var L = listById(G.listId), st = L && STORIES[L.id]; if (!st) return;
+    stopSpeech(); var t = TOKEN; G.playing = true; G.reading = -1; render();
+    (async function () {
+      for (var k = 0; k < st.sentences.length; k++) {
+        if (t !== TOKEN) return;
+        G.reading = k;
+        root.querySelectorAll(".st-s").forEach(function (p, i) { p.classList.toggle("reading", i === k); });
+        var p = root.querySelector('.st-s[data-k="' + k + '"]'); if (p) { var r = p.getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) p.scrollIntoView({ block: "center", behavior: reducedMotion() ? "auto" : "smooth" }); }
+        await speak(st.sentences[k].zh);
+        if (t !== TOKEN) return;
+        await wait(450);
+      }
+      if (t === TOKEN) { G.playing = false; G.reading = -1; render(); }
+    })();
+  }
+  /* A week word tapped: while reading it is spoken; in Find the words it is an answer. */
+  function storyWord(b) {
+    var w = b.dataset.w;
+    if (G.sv !== "find") { var was = G.playing; stopSpeech(); if (was) { G.playing = false; G.reading = -1; render(); } sayOne(b.dataset.hl, w); return; }
+    if (G.phase !== "run" || G.solved) return;
+    var q = G.q[G.i]; if (G.wrong.indexOf(w) >= 0) return;
+    if (w === q.answer) {
+      G.solved = true; G.sa = { w: w, type: "bounce" }; stopSpeech(); render(); chime(); sayWordSoon(q.w, 250);
+      var nx = root.querySelector(".g-next"); if (nx) nx.focus({ preventScroll: true });
+      clearTimeout(gTimer); gTimer = setTimeout(gameNext, 1800);
+    } else {
+      q.firstTry = false; G.wrong.push(w); G.sa = { w: w, type: "wobble" }; render(); boop();
+      var left = root.querySelector(".st-w:not([disabled])"); if (left) left.focus({ preventScroll: true });
+    }
+  }
+  function storyFind() {
+    stopSpeech(); G.playing = false; G.reading = -1; G.sv = "find"; G.i = 0; G.solved = false; G.wrong = [];
+    render(); toTop();
+    var s = root.querySelector(".g-say"); if (s) s.focus({ preventScroll: true });
+    curGame().onShow(G.q[0]);
+  }
   /* Picker groups, in order. Ids not in GAMES yet are skipped. */
   var GROUPS = [
     { id: "listen", cn: "听", en: "Listen", games: ["listenPick", "bubbles", "catchIt"] },
@@ -902,6 +1014,7 @@
     if (G.phase === "run" && g && g.kind === "memory") return memoryView(g);
     if (G.phase === "setup" && g && (g.kind === "bubbles" || g.kind === "catch")) return bubbleSetupView(g);
     if (G.phase === "run" && g && g.kind === "catch") return catchView(g);
+    if (G.phase === "run" && g && g.kind === "story") return storyView(g);
     if (G.phase === "run" && g && g.kind === "bubbles") return bubbleView(g);
     if (G.phase === "run" && g && g.kind === "write") return writeGameView(g);
     if (G.phase === "run" && g && g.kind === "spot") return spotView(g);
@@ -941,9 +1054,10 @@
     G.phase = "run";
     if (g.kind === "memory") { G.mm = g.build(L); G.q = []; }
     else G.q = g.build(L);
+    if (g.kind === "story") G.sv = "read"; /* the story first, then Find the words */
     render(); toTop(); /* render() also starts the bubbles */
-    var p = root.querySelector(".g-choice, .mm-card, .bub, .g-writeIt .g-say, .sp-box, .ct-lane[aria-pressed=\"true\"], .ct-field.still .ct-lane"); if (p) p.focus({ preventScroll: true });
-    if (g.onShow) g.onShow(G.q[0]);
+    var p = root.querySelector(".g-choice, .mm-card, .bub, .g-writeIt .g-say, .sp-box, .ct-lane[aria-pressed=\"true\"], .ct-field.still .ct-lane, .st-play"); if (p) p.focus({ preventScroll: true });
+    if (g.onShow && G.sv !== "read") g.onShow(G.q[0]);
   }
 
   /* ---------- 泡泡 Bubble pop: bubbles float up (requestAnimationFrame + transforms) ---------- */
@@ -1154,7 +1268,7 @@
     stopSpeech();
     if (G.i < G.q.length - 1) {
       G.i++; G.wrong = []; G.solved = false; G.hint = false; G.step = ""; G.sa = null; render();
-      var p = root.querySelector(".g-choice, .sp-box"); if (p) p.focus({ preventScroll: true });
+      var p = root.querySelector(".g-choice, .sp-box, .st-findv .g-say"); if (p) p.focus({ preventScroll: true });
       var g = curGame(); if (g.onShow) g.onShow(G.q[G.i]);
     } else gameFinish();
   }
@@ -1655,6 +1769,10 @@
     gstart: function (b) { if (b.getAttribute("aria-disabled") === "true") return; audioCtx(); startGame(b.dataset.g, true); }, /* first tap unlocks Web Audio on iOS */
     bspeed: function (b) { var v = b.dataset.v === "normal" ? "normal" : "slow"; if (G.game === "catchIt") catchSpeed = v; else bubbleSpeed = v; render(); },
     clane: function (b) { catchLane(+b.dataset.i); },
+    stplay: storyPlay,
+    sttog: function (b) { if (b.dataset.k === "en") storyEn = !storyEn; else storyPy = !storyPy; render(); },
+    stfind: storyFind,
+    stw: storyWord,
     bgo: function () { audioCtx(); startGame(G.game); },
     bpick: function (b) { bubblePick(+b.dataset.i); },
     gpick: function (b) { gamePick(+b.dataset.i); },
@@ -1782,6 +1900,12 @@
       if (items[to]) items[to].focus();
       return;
     }
+    /* 小故事: Space plays the story (reading) or hears the word again (finding); 1…n tap the nth week word. */
+    if (S.mode === "play" && G.phase === "run" && G.game === "story") {
+      if (space && !onBtn) { e.preventDefault(); if (G.sv === "find") ACT.gsay(); else storyPlay(); }
+      else if (G.sv === "find" && /^[1-9]$/.test(k)) { var sw = storyWords(listById(G.listId))[+k - 1], sb = sw && root.querySelector('.st-w[data-w="' + sw + '"]:not([disabled])'); e.preventDefault(); if (sb && !e.repeat) storyWord(sb); }
+      return;
+    }
     /* 接一接: ←/→ move the basket, 1/2/3 jump to a lane, Space hears the word again. */
     if (S.mode === "play" && G.phase === "run" && G.game === "catchIt") {
       if (space && !onBtn) { e.preventDefault(); ACT.gsay(); }
@@ -1852,6 +1976,8 @@
   render();
   fetch("data/lookalikes.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; })
     .then(function (d) { LOOK = d && typeof d === "object" ? d : {}; }).catch(function () {}); /* only 缺字 uses it; it falls back without */
+  fetch("data/stories.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : {}; })
+    .then(function (d) { STORIES = d && typeof d === "object" ? d : {}; if (S.mode === "play" && G.phase === "picker") render(); }).catch(function () {}); /* 小故事 only shows for lists with a story */
   fetch("data/lists.json", { cache: "no-cache" })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (d) { S.lists = TXL.sortLists((d && d.lists) || []); S.cur = pickDefault(); S.loading = false; render(); })

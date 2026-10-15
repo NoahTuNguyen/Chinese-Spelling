@@ -359,6 +359,29 @@ moves the basket there and catches it (wrong = boop, that lane greys out). Score
 without catching another word first; first-try misses go to Tricky. How-to: 听一听，接一接 · Move the
 basket to catch the word you hear.
 
+**19 小故事 Story time** (认 Read group). Data: `src/data/stories.json`, keyed by list id:
+`{ "l15": { "title", "titlePinyin", "titleEn", "sentences": [ { "zh", "py", "en" } ] } }`. One short
+story per list (3–5 Primary 1–2 sentences, simple, positive, Singapore-friendly everyday settings)
+that uses every word of that list at least once; Chinese quotes are “ ” in `zh`, straight quotes in `py`
+and `en`. The card only shows for a list that has a story ("No story for this week yet" otherwise).
+Validator: every list word appears in its story's sentences; a missing story or a word whose pinyin
+isn't in its sentence's pinyin only warns.
+- **Reading** (how-to 听故事，读一读 · Listen and read along): ✕, 小故事, a yellow 听故事 Play the story
+  button (停一停 Stop while playing) and two toggles, 拼音 Pinyin (on) and English (off) — kept for the
+  visit. A white card: the title in Kai (+ title pinyin / English), then each sentence with its pinyin
+  and English lines. The week's words are coloured (`--grid-ink`), underlined, and are buttons (≥ 48 px
+  tall): tap = speak the word; their syllables are bold in the pinyin line. Play reads the story
+  sentence by sentence and highlights the sentence being read (pale yellow, pencil-yellow left edge;
+  scrolled into view) — sentence-level, not word-level, because iOS speech boundary events are
+  unreliable for Chinese. Space plays/stops. At the end, 找一找 Find the words →.
+- **Find the words** (how-to 听一听，找一找 · Tap the word you hear): same top bar and dots as the other
+  games. Every week word once, random order; the word is spoken (🔊 再听一次 / Space replays it) and she
+  taps it in the story (any place it appears). Right: the word turns `--good` blue, bounce, chime, the
+  word is spoken, pinyin + English show, next after ~1.8 s (or 下一个 Next beside Hear again). Wrong:
+  boop, wobble, that word fades (dotted underline) for this question. English is hidden here. Keys 1…n
+  tap the nth week word in story order (small number badges on devices with a mouse).
+- End screen as usual: stars = words found first try, misses go to Tricky, best per list in `tx-games`.
+
 **Stroke order (Hanzi Writer), self-hosted.** Hanzi Writer 3.7.3 (MIT) lives in
 `src/vendor/hanzi-writer/` (unmodified minified UMD build, its `LICENSE.txt`, a `VERSION` file with
 the SHA-256) and is loaded with a normal `<script>` tag from our own domain. Stroke data for only
